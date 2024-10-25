@@ -53,12 +53,12 @@ def run_raylib():
                         pr.draw_rectangle(
                             int(shape[1]['__x']), 
                             int(shape[1]['__y']), 
-                            int(shape[1]['__w']), 
-                            int(shape[1]['__h']), 
+                            int(shape[1]['__width']), 
+                            int(shape[1]['__height']), 
                             pr.Color(
-                                int(shape[1]['__c'][0]),
-                                int(shape[1]['__c'][1]),
-                                int(shape[1]['__c'][2]),
+                                int(shape[1]['__color'][0]),
+                                int(shape[1]['__color'][1]),
+                                int(shape[1]['__color'][2]),
                                 255 # alpha tkt
                                 )
                             )

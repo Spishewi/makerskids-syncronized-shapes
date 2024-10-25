@@ -53,9 +53,9 @@ class Rectangle(SyncronizedShape):
         super().__init__()
         self.__x = x
         self.__y = y
-        self.__w = width
-        self.__h = height
-        self.__c = color
+        self.__width = width
+        self.__height = height
+        self.__color = color
 
         self.update_data()
 
@@ -63,9 +63,9 @@ class Rectangle(SyncronizedShape):
         return {
             '__x': self.__x,
             '__y': self.__y,
-            '__w': self.__w,
-            '__h': self.__h,
-            '__c': self.__c
+            '__width': self.__width,
+            '__height': self.__height,
+            '__color': self.__color
         }
     
     @property
@@ -87,28 +87,28 @@ class Rectangle(SyncronizedShape):
         self.update_data()
 
     @property
-    def w(self):
-        return self.__w
+    def width(self):
+        return self.__width
     
-    @w.setter
-    def w(self, v):
-        self.__w = v
+    @width.setter
+    def width(self, v):
+        self.__width = v
         self.update_data()
     
     @property
-    def h(self):
-        return self.__h
+    def height(self):
+        return self.__height
     
-    @h.setter
-    def h(self, v):
-        self.__h = v
+    @height.setter
+    def height(self, v):
+        self.__height = v
         self.update_data()
 
     @property
     def color(self):
-        return self.__c
+        return self.__color
     
     @color.setter
     def color(self, v):
-        self.__c = v
+        self.__color = v
         self.update_data()

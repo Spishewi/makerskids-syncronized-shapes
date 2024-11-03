@@ -21,6 +21,18 @@ def connect_client(url: str) -> None:
     # Connect to the server
     sio.connect(url)
 
+def set_username(username: str):
+    """
+    Emits an event to set the username on the server.
+
+    :param username: The username to be set for the client
+    """
+    if not sio.connected:
+        raise ConnectionError("Please be connected to the server !")
+    
+    # Emit the set_username event with the provided username
+    sio.emit("set_username", username, callback=error_handler)
+
 def error_handler(status_code, message):
     """
     Handles errors by printing an error message to stderr if the status code is not 200.

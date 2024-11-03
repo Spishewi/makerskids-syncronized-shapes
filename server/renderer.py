@@ -4,7 +4,7 @@ import pyray as pr
 from globals import SUPPORTED_SHAPES
 
 class Renderer():
-    def __init__(self, shapes_data: dict[str, dict], shapes_owner: dict[str, set[str]]):
+    def __init__(self, shapes_data: dict[str, dict], shapes_owner: dict[str, set[str]], usernames: dict[str, str]):
         """
         Initializes a new Renderer object.
 
@@ -15,11 +15,16 @@ class Renderer():
 
         self.__shapes_data = shapes_data
         self.__shapes_owner = shapes_owner
+        self.__usernames = usernames
 
         self.__is_running = False
         self.__should_close = False
 
     def __draw(self):
+        #TODO: because of concurrency problems, i'll have to make a lock system on theses variables
+        safe_shape_data = self.__shapes_data
+        safe_usernames = self.__usernames
+
         pr.begin_drawing()
         pr.clear_background(pr.GRAY)
 
@@ -27,16 +32,20 @@ class Renderer():
 
         pr.clear_background(pr.WHITE)
 
-        for shape in self.__shapes_data.values():
+        for shape in safe_shape_data.values():
             shape_type, shape_data = shape
             if shape_type not in SUPPORTED_SHAPES:
                 print(f"Invalid shape type: {shape_type}")
-
                 continue
+
             if shape_type == "Rectangle":
                 self.__draw_rectangle(shape_data)
 
         pr.end_scissor_mode()
+
+        pr.draw_text("Connected users :", 520, 20, 20, pr.BLACK)
+        for i, username in enumerate(sorted(list(safe_usernames.values()))):
+            pr.draw_text(username, 520, (i+2) * 20, 20, pr.BLUE)
 
         pr.end_drawing()
 
@@ -54,15 +63,14 @@ class Renderer():
         except Exception as e:
             print("Invalid shape data:", e)
             raise e
-
-
+        
     def run(self):
         """
         Main loop that continuously draws shapes until the window should close.
         """
         self.__is_running = True
 
-        pr.init_window(700, 500, "Makers Kids Connect")
+        pr.init_window(800, 500, "Makers Kids Connect")
         pr.set_target_fps(30)
 
         while not pr.window_should_close() and not self.__should_close:

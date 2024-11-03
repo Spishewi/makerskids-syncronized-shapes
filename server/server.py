@@ -7,11 +7,14 @@ sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
 
-# list of all the shapes with their data
+# list of all the shapes with their data (dict[shape_uuid, dict])
 shapes_data: dict[str, dict] = {}
 
-# dictonary of all the clients and their shapes
+# dictonary of all the clients and their shapes (dict[sid, set[shape_uuid]])
 shapes_owner: dict[str, set[str]] = {}
+
+# clients usernames (dict[sid, username])
+usernames: dict[str, str] = {}
 
 @sio.event
 def connect(sid, environ): #pylint: disable=unused-argument
@@ -22,6 +25,7 @@ def connect(sid, environ): #pylint: disable=unused-argument
     print("connect ", sid)
     # add the client to the list of connected clients
     shapes_owner[sid] = set()
+    usernames[sid] = sid
 
 @sio.event
 def disconnect(sid):
@@ -37,8 +41,37 @@ def disconnect(sid):
 
     # Remove the client from the list of shape owners
     del shapes_owner[sid]
+    del usernames[sid]
 
     print(f"all {sid} shapes have been deleted")
+
+@sio.event
+def set_username(sid, username):
+    """
+    Handles the setting of a username. Updates the server's data structures
+    with the new username.
+
+    :param sid: Session ID for the client
+    :param username: String containing the username
+    """
+    # basics sanity checks
+
+    # username must be a string
+    if not isinstance(username, str):
+        return 400, "USERNAME MUST BE A STRING"
+    
+    # Do nothing if the username is already set
+    if usernames[sid] == username:
+        return 200, "OK"
+    
+    # Username must be unique
+    if username in usernames.values():
+        return 400, "USERNAME ALREADY EXISTS"
+    
+    #set the username
+    usernames[sid] = username
+
+    return 200, "OK"
 
 @sio.event
 async def create_shape(sid, shape_uuid, shape_type, shape_data):

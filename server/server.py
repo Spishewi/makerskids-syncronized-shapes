@@ -1,74 +1,151 @@
 from aiohttp import web
 import socketio
 
-import pyray as pr
-import threading
+from globals import SUPPORTED_SHAPES
 
 sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
 
-#async def index(request):
-#    """Serve the client-side application."""
-#    with open('index.html') as f:
-#        return web.Response(text=f.read(), content_type='text/html')
+# list of all the shapes with their data
+shapes_data: dict[str, dict] = {}
 
-server_data = {}
+# dictonary of all the clients and their shapes
+shapes_owner: dict[str, set[str]] = {}
 
 @sio.event
-def connect(sid, environ):
+def connect(sid, environ): #pylint: disable=unused-argument
+    """
+    When a client connect, this function is called.
+    For now, it just creates a new empty set of shapes.
+    """
     print("connect ", sid)
-    server_data[sid] = []
-
-@sio.event
-async def update(sid, data):
-    server_data[sid] = data
-    #print(data)
-    
-    to_send_back = server_data.copy()
-    del to_send_back[sid]
-    await sio.emit("update", to_send_back, skip_sid=sid)
+    # add the client to the list of connected clients
+    shapes_owner[sid] = set()
 
 @sio.event
 def disconnect(sid):
+    """
+    Handles the disconnection of a client. Removes all shapes associated 
+    with the client and cleans up client data from the server.
+    """
     print('disconnect ', sid)
-    del server_data[sid]
 
-#app.router.add_static('/static', 'static')
-#app.router.add_get('/', index)
-def run_raylib():
-    pr.init_window(1920, 1080, "Makers Kids Connect")
-    #pr.toggle_fullscreen()
+    # Remove all shapes associated with the client
+    for shape_uuid in shapes_owner[sid]:
+        del shapes_data[shape_uuid]
 
-    pr.set_target_fps(30)
+    # Remove the client from the list of shape owners
+    del shapes_owner[sid]
 
-    while not pr.window_should_close():
-        pr.begin_drawing()
-        pr.clear_background(pr.WHITE)
+    print(f"all {sid} shapes have been deleted")
 
-        for shapes in server_data.values():
-            for shape in shapes.values():
-                if shape[0] == "Rectangle":
-                    try:
-                        pr.draw_rectangle(
-                            int(shape[1]['__x']), 
-                            int(shape[1]['__y']), 
-                            int(shape[1]['__width']), 
-                            int(shape[1]['__height']), 
-                            pr.Color(
-                                int(shape[1]['__color'][0]),
-                                int(shape[1]['__color'][1]),
-                                int(shape[1]['__color'][2]),
-                                255 # alpha tkt
-                                )
-                            )
-                    except Exception as e:
-                        print(e)
+@sio.event
+async def create_shape(sid, shape_uuid, shape_type, shape_data):
+    """
+    Handles the creation of a new shape. Validates the input data,
+    checks for existing shapes, and updates the server's data structures.
 
-        pr.end_drawing()
-    pr.close_window()
+    :param sid: Session ID for the client
+    :param shape_uuid: String containing shape UUID
+    :param shape_type: String containing shape type
+    :param shape_data: Dictionary containing shape data
 
-if __name__ == '__main__':
-    rl_thread = threading.Thread(target=run_raylib)
-    rl_thread.start()
-    web.run_app(app)
+    :return: a tuple of (status, message)
+    """
+    # basics sanity checks
+
+    # shape_uuid must be a string
+    if not isinstance(shape_uuid, str):
+        return 400, "SHAPE_UUID MUST BE A STRING"
+
+    #shape_type must be a string
+    if not isinstance(shape_type, str):
+        return 400, "SHAPE_TYPE MUST BE A STRING"
+
+    # shape_type must be one of the supported shapes
+    if shape_type not in SUPPORTED_SHAPES:
+        return 400, "SHAPE_TYPE MUST BE A SUPPORTED SHAPE"
+
+    # shape_data must be a dictionary
+    if not isinstance(shape_data, dict):
+        return 400, "SHAPE_DATA MUST BE A DICTIONARY"
+
+    # shape musn't already exist
+    if shape_uuid in shapes_data:
+        return 400, "THIS SHAPE ALREADY EXISTS. YOU CAN'T CREATE A SHAPE THAT ALREADY EXISTS"
+
+    # Add the new shape to the server's data structures
+    shapes_data[shape_uuid] = (shape_type, shape_data)
+    shapes_owner[sid].add(shape_uuid)
+
+    # Return success status and message
+    return 200, "OK"
+
+@sio.event
+async def update_shape(sid, shape_uuid, shape_type, shape_data):
+    """
+    Handles the update of a shape. Validates the input data,
+    checks if the shape already exists, and updates the server's data structures.
+
+    :param sid: Session ID for the client
+    :param shape_uuid: String containing shape UUID
+    :param shape_type: String containing shape type
+    :param shape_data: Dictionary containing shape data
+
+    :return: a tuple of (status, message)
+    """
+    # basics sanity checks
+
+    # shape_uuid must be a string
+    if not isinstance(shape_uuid, str):
+        return 400, "SHAPE_UUID MUST BE A STRING"
+
+    #shape_type must be a string
+    if not isinstance(shape_type, str):
+        return 400, "SHAPE_TYPE MUST BE A STRING"
+
+    # shape_data must be a dictionary
+    if not isinstance(shape_data, dict):
+        return 400, "SHAPE_DATA MUST BE A DICTIONARY"
+
+    # shape musn't already exist
+    if shape_uuid not in shapes_data:
+        return 400, "THIS SHAPE DOESN'T EXIST"
+
+    # shape must be of the same type
+    if shape_type != shapes_data[shape_uuid][0]:
+        return 400, "YOU CAN'T UPDATE A THIS SHAPE TO A DIFFERENT TYPE"
+
+    # we add the shapes to ours data
+    shapes_data[shape_uuid] = (shape_type, shape_data)
+    shapes_owner[sid].add(shape_uuid)
+
+    return 200, "OK"
+
+@sio.event
+async def delete_shape(sid, shape_uuid):
+    """
+    Handles the deletion of a shape.
+    Validates the input data, and updates the server's data structures.
+
+    :param sid: Session ID for the client
+    :param shape_uuid: String containing shape UUID
+    :return: a tuple of (status, message)
+    """
+    # basics sanity checks
+    if not isinstance(shape_uuid, str):
+        return 400, "DATA IS NOT A STRING"
+
+    # if it exists
+    if shape_uuid not in shapes_data:
+        return 400, "THIS SHAPE DOESN'T EXIST"
+
+    # remove the shape from the server's data structures
+    del shapes_data[shape_uuid]
+
+    # remove the shape from the client's list of shapes
+    shapes_owner[sid].discard(shape_uuid)
+
+    return 200, "OK"
+

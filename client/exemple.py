@@ -2,9 +2,13 @@ import time
 import random
 import math
 
-from syncronized_shapes import connect_client, Rectangle
+from syncronized_shapes import (
+    connect_client,
+    set_username,
+    Rectangle)
 
 connect_client('http://localhost:8080')
+#set_username("Bob")
 
 randomColor = (random.randint(255//3, 255//3*2),
                random.randint(255//3, 255//3*2),

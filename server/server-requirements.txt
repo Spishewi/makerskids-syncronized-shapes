@@ -1,2 +1,3 @@
-python-socketio[asyncio]
+python-socketio
+aiohttp
 raylib

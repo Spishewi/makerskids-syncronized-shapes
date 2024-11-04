@@ -1,10 +1,11 @@
 # pylint: disable=no-member
 import pyray as pr
 
-from globals import SUPPORTED_SHAPES
+# pylint: disable-next=unused-wildcard-import,wildcard-import
+import variables as g
 
 class Renderer():
-    def __init__(self, shapes_data: dict[str, dict], shapes_owner: dict[str, set[str]], usernames: dict[str, str]):
+    def __init__(self):
         """
         Initializes a new Renderer object.
 
@@ -13,17 +14,19 @@ class Renderer():
         :param shapes_owner: A dictionary mapping client session IDs to sets of shape UUIDs.
         """
 
-        self.__shapes_data = shapes_data
-        self.__shapes_owner = shapes_owner
-        self.__usernames = usernames
-
         self.__is_running = False
         self.__should_close = False
 
     def __draw(self):
-        #TODO: because of concurrency problems, i'll have to make a lock system on theses variables
-        safe_shape_data = self.__shapes_data
-        safe_usernames = self.__usernames
+
+        # I need to copy the data here because the dictionary can be modified during the loop because of concurrency
+        # A shallow copy is sufficient because the data itself is never modified, only replaced with new data
+        # Drawing shapes on the window can be long, so I don't want to lock for too long
+        # TODO: see if just locking is faster or slower.
+
+        with g.shapes_data_lock, g.usernames_lock:
+            safe_shape_data = g.shapes_data.copy()
+            safe_usernames = g.usernames.copy()
 
         pr.begin_drawing()
         pr.clear_background(pr.GRAY)
@@ -32,9 +35,10 @@ class Renderer():
 
         pr.clear_background(pr.WHITE)
 
+        # Draw the shapes
         for shape in safe_shape_data.values():
             shape_type, shape_data = shape
-            if shape_type not in SUPPORTED_SHAPES:
+            if shape_type not in g.SUPPORTED_SHAPES:
                 print(f"Invalid shape type: {shape_type}")
                 continue
 
@@ -43,6 +47,7 @@ class Renderer():
 
         pr.end_scissor_mode()
 
+        # Draw the usernames, sorted alphabetically
         pr.draw_text("Connected users :", 520, 20, 20, pr.BLACK)
         for i, username in enumerate(sorted(list(safe_usernames.values()))):
             pr.draw_text(username, 520, (i+2) * 20, 20, pr.BLUE)
@@ -50,17 +55,25 @@ class Renderer():
         pr.end_drawing()
 
     def __draw_rectangle(self, shape_data: dict):
+        """
+        Draws a rectangle on the window based on the given shape data.
+
+        :param shape_data: A dictionary containing the shape data for the rectangle.
+        """
         try:
+            # Extract the data from the shape data dictionary
             x = int(shape_data["__x"])
             y = int(shape_data["__y"])
             width = int(shape_data["__width"])
             height = int(shape_data["__height"])
             color = pr.Color(*[int(i) for i in shape_data["__color"]], 255) # cast all values to int
 
+            # Draw the rectangle
             pr.draw_rectangle(x, y, width, height, color)
 
         # pylint: disable=broad-except
         except Exception as e:
+            # Print a message if the data is invalid
             print("Invalid shape data:", e)
             raise e
 

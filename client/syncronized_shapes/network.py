@@ -5,12 +5,26 @@ sio = socketio.Client()
 
 @sio.event
 def connect():
+    """
+    Handles the connection event emitted by the server after a
+    successful connection.
+
+    Prints a message to the console to indicate that the connection
+    has been established.
+    """
     print('connection established')
 
 @sio.event
 def disconnect():
+    """
+    Handles the disconnection event emitted by the server after a
+    successful disconnection.
+
+    Prints a message to the console to indicate that the disconnection
+    has been sucessful and exits the program.
+    """
     print('disconnected from server')
-    exit() # completely exit the program
+    sys.exit() # completely exit the program
 
 def connect_client(url: str) -> None:
     """
@@ -29,7 +43,7 @@ def set_username(username: str):
     """
     if not sio.connected:
         raise ConnectionError("Please be connected to the server !")
-    
+
     # Emit the set_username event with the provided username
     sio.emit("set_username", username, callback=error_handler)
 

@@ -63,7 +63,7 @@ class Renderer():
         except Exception as e:
             print("Invalid shape data:", e)
             raise e
-        
+
     def run(self):
         """
         Main loop that continuously draws shapes until the window should close.

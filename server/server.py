@@ -59,15 +59,15 @@ def set_username(sid, username):
     # username must be a string
     if not isinstance(username, str):
         return 400, "USERNAME MUST BE A STRING"
-    
+
     # Do nothing if the username is already set
     if usernames[sid] == username:
         return 200, "OK"
-    
+
     # Username must be unique
     if username in usernames.values():
         return 400, "USERNAME ALREADY EXISTS"
-    
+
     #set the username
     usernames[sid] = username
 
@@ -181,4 +181,3 @@ async def delete_shape(sid, shape_uuid):
     shapes_owner[sid].discard(shape_uuid)
 
     return 200, "OK"
-

@@ -1,3 +1,5 @@
+import asyncio
+
 from aiohttp import web
 import socketio
 
@@ -184,3 +186,9 @@ async def delete_shape(sid, shape_uuid):
         g.shapes_owner[sid].discard(shape_uuid)
 
     return 200, "OK"
+
+def kick_user(sid):
+    """
+    Kicks a user from the server.
+    """
+    asyncio.run(sio.disconnect(sid))

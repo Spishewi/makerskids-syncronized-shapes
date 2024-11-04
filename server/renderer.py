@@ -3,6 +3,7 @@ import pyray as pr
 
 # pylint: disable-next=unused-wildcard-import,wildcard-import
 import variables as g
+from server import kick_user
 
 class Renderer():
     def __init__(self):
@@ -29,9 +30,14 @@ class Renderer():
             safe_usernames = g.usernames.copy()
 
         pr.begin_drawing()
-        pr.clear_background(pr.GRAY)
+        pr.clear_background(
+            # the need to add 2**32 is because pr.gui_get_style returns a uint32 and it isn't correctly cast to an int
+            pr.get_color(2**32 + pr.gui_get_style(pr.GuiControl.DEFAULT, pr.GuiDefaultProperty.BACKGROUND_COLOR))
+        )
 
-        pr.begin_scissor_mode(0, 0, 500, 500)
+        pr.draw_fps(5, 5)
+
+        pr.begin_scissor_mode(20, 20, 460, 460)
 
         pr.clear_background(pr.WHITE)
 
@@ -40,17 +46,23 @@ class Renderer():
             shape_type, shape_data = shape
             if shape_type not in g.SUPPORTED_SHAPES:
                 print(f"Invalid shape type: {shape_type}")
-                continue
+                # Do nothing for invalid shapes
 
-            if shape_type == "Rectangle":
+            elif shape_type == "Rectangle":
                 self.__draw_rectangle(shape_data)
 
         pr.end_scissor_mode()
 
+        pr.draw_rectangle_lines(20, 20, 460, 460, pr.BLACK)
+
         # Draw the usernames, sorted alphabetically
         pr.draw_text("Connected users :", 520, 20, 20, pr.BLACK)
-        for i, username in enumerate(sorted(list(safe_usernames.values()))):
-            pr.draw_text(username, 520, (i+2) * 20, 20, pr.BLUE)
+        for i, sid_username_pair in enumerate(sorted(list(safe_usernames.items()), key=lambda x: x[1])):
+            sid, username = sid_username_pair
+            if pr.gui_button(pr.Rectangle(520, (i+2) * 25, 20, 20), f"#{pr.GuiIconName.ICON_EXIT}#"):
+                kick_user(sid)
+
+            pr.gui_label(pr.Rectangle(520+30, (i+2) * 25, 200, 20), username)
 
         pr.end_drawing()
 

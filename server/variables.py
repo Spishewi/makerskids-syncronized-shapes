@@ -1,7 +1,9 @@
 from threading import Lock
 
 SUPPORTED_SHAPES = [
-    "Rectangle"
+    "Rectangle",
+    "Ellipse",
+    "Line"
     ]
 
 # WARNING: ALLWAYS LOCK IN THIS ORDER

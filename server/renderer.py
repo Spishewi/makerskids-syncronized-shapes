@@ -35,7 +35,7 @@ class Renderer():
             pr.get_color(2**32 + pr.gui_get_style(pr.GuiControl.DEFAULT, pr.GuiDefaultProperty.BACKGROUND_COLOR))
         )
 
-        pr.draw_fps(5, 5)
+        pr.draw_fps(20, 1)
 
         pr.begin_scissor_mode(20, 20, 460, 460)
 
@@ -50,6 +50,12 @@ class Renderer():
 
             elif shape_type == "Rectangle":
                 self.__draw_rectangle(shape_data)
+
+            elif shape_type == "Ellipse":
+                self.__draw_ellipse(shape_data)
+
+            elif shape_type == "Line":
+                self.__draw_line(shape_data)
 
         pr.end_scissor_mode()
 
@@ -82,6 +88,52 @@ class Renderer():
 
             # Draw the rectangle
             pr.draw_rectangle(x, y, width, height, color)
+
+        # pylint: disable=broad-except
+        except Exception as e:
+            # Print a message if the data is invalid
+            print("Invalid shape data:", e)
+            raise e
+
+    def __draw_ellipse(self, shape_data: dict):
+        """
+        Draws an ellipse on the window based on the given shape data.
+
+        :param shape_data: A dictionary containing the shape data for the ellipse.
+        """
+        try:
+            # Extract the data from the shape data dictionary
+            x = int(shape_data["__x"])
+            y = int(shape_data["__y"])
+            x_radius = float(shape_data["__x_radius"])
+            y_radius = float(shape_data["__y_radius"])
+            color = pr.Color(*[int(i) for i in shape_data["__color"]], 255) # cast all values to int
+
+            # Draw the ellipse
+            pr.draw_ellipse(x, y, x_radius, y_radius, color)
+
+        # pylint: disable=broad-except
+        except Exception as e:
+            # Print a message if the data is invalid
+            print("Invalid shape data:", e)
+            raise e
+
+    def __draw_line(self, shape_data: dict):
+        """
+        Draws an line on the window based on the given shape data.
+
+        :param shape_data: A dictionary containing the shape data for the line.
+        """
+        try:
+            # Extract the data from the shape data dictionary
+            x1 = int(shape_data["__x1"])
+            y1 = int(shape_data["__y1"])
+            x2 = int(shape_data["__x2"])
+            y2 = int(shape_data["__y2"])
+            color = pr.Color(*[int(i) for i in shape_data["__color"]], 255) # cast all values to int
+
+            # Draw the line
+            pr.draw_line(x1, y1, x2, y2, color)
 
         # pylint: disable=broad-except
         except Exception as e:

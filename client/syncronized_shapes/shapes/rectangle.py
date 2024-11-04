@@ -47,20 +47,20 @@ class Rectangle(SyncronizedShape):
             # The color of the rectangle as an (R, G, B) tuple
             '__color': self.__color
         }
-    
+
     @property
     def x(self):
         return self.__x
-    
+
     @x.setter
     def x(self, v):
         self.__x = v
         self.update_data()
-    
+
     @property
     def y(self):
         return self.__y
-    
+
     @y.setter
     def y(self, v):
         self.__y = v
@@ -69,16 +69,16 @@ class Rectangle(SyncronizedShape):
     @property
     def width(self):
         return self.__width
-    
+
     @width.setter
     def width(self, v):
         self.__width = v
         self.update_data()
-    
+
     @property
     def height(self):
         return self.__height
-    
+
     @height.setter
     def height(self, v):
         self.__height = v
@@ -87,7 +87,7 @@ class Rectangle(SyncronizedShape):
     @property
     def color(self):
         return self.__color
-    
+
     @color.setter
     def color(self, v):
         self.__color = v

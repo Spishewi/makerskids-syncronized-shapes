@@ -49,46 +49,61 @@ class Rectangle(SyncronizedShape):
         }
 
     @property
-    def x(self):
+    def x(self) -> float:
+        """
+        The x-coordinate of the rectangle.
+        """
         return self.__x
 
     @x.setter
-    def x(self, v):
+    def x(self, v: float):
         self.__x = v
         self.update_data()
 
     @property
-    def y(self):
+    def y(self) -> float:
+        """
+        The y-coordinate of the rectangle.
+        """
         return self.__y
 
     @y.setter
-    def y(self, v):
+    def y(self, v: float):
         self.__y = v
         self.update_data()
 
     @property
-    def width(self):
+    def width(self) -> float:
+        """
+        The width of the rectangle.
+        """
         return self.__width
 
     @width.setter
-    def width(self, v):
+    def width(self, v: float):
         self.__width = v
         self.update_data()
 
     @property
-    def height(self):
+    def height(self) -> float:
+        """
+        The height of the rectangle.
+        """
         return self.__height
 
     @height.setter
-    def height(self, v):
+    def height(self, v: float):
         self.__height = v
         self.update_data()
 
     @property
-    def color(self):
+    def color(self) -> tuple[int, int, int]:
+        """
+        The color of the rectangle as an (R, G, B) tuple.
+        """
         return self.__color
 
     @color.setter
-    def color(self, v):
+    def color(self, v: tuple[int, int, int]):
         self.__color = v
         self.update_data()

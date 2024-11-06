@@ -49,46 +49,61 @@ class Ellipse(SyncronizedShape):
         }
 
     @property
-    def x(self):
+    def x(self) -> float:
+        """
+        The x-coordinate of center of the ellipse.
+        """
         return self.__x
 
     @x.setter
-    def x(self, v):
+    def x(self, v: float):
         self.__x = v
         self.update_data()
 
     @property
-    def y(self):
+    def y(self) -> float:
+        """
+        The y-coordinate of center of the ellipse.
+        """
         return self.__y
 
     @y.setter
-    def y(self, v):
+    def y(self, v: float):
         self.__y = v
         self.update_data()
 
     @property
-    def x_radius(self):
+    def x_radius(self) -> float:
+        """
+        The x-radius of the ellipse.
+        """
         return self.__x_radius
 
     @x_radius.setter
-    def x_radius(self, v):
+    def x_radius(self, v: float):
         self.__x_radius = v
         self.update_data()
 
     @property
-    def y_radius(self):
+    def y_radius(self) -> float:
+        """
+        The y-radius of the ellipse.
+        """
         return self.__y_radius
 
     @y_radius.setter
-    def y_radius(self, v):
+    def y_radius(self, v: float):
         self.__y_radius = v
         self.update_data()
 
     @property
-    def color(self):
+    def color(self) -> tuple[int, int, int]:
+        """
+        The color of the ellipse as an (R, G, B) tuple
+        """
         return self.__color
 
     @color.setter
-    def color(self, v):
+    def color(self, v: tuple[int, int, int]):
         self.__color = v
         self.update_data()

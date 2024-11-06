@@ -49,46 +49,61 @@ class Line(SyncronizedShape):
         }
 
     @property
-    def x1(self):
+    def x1(self) -> float:
+        """
+        The x-coordinate of the first point of the line
+        """
         return self.__x1
 
     @x1.setter
-    def x1(self, v):
+    def x1(self, v: float):
         self.__x1 = v
         self.update_data()
 
     @property
-    def y1(self):
+    def y1(self) -> float:
+        """
+        The y-coordinate of the first point of the line
+        """
         return self.__y1
 
     @y1.setter
-    def y1(self, v):
+    def y1(self, v: float):
         self.__y1 = v
         self.update_data()
 
     @property
-    def x2(self):
+    def x2(self) -> float:
+        """
+        The x-coordinate of the second point of the line
+        """
         return self.__x2
 
     @x2.setter
-    def x2(self, v):
+    def x2(self, v: float):
         self.__x2 = v
         self.update_data()
 
     @property
-    def y2(self):
+    def y2(self) -> float:
+        """
+        The y-coordinate of the second point of the line
+        """
         return self.__y2
 
     @y2.setter
-    def y2(self, v):
+    def y2(self, v: float):
         self.__y2 = v
         self.update_data()
 
     @property
-    def color(self):
+    def color(self) -> tuple[int, int, int]:
+        """
+        The color of the line as an (R, G, B) tuple
+        """
         return self.__color
 
     @color.setter
-    def color(self, v):
+    def color(self, v: tuple[int, int, int]):
         self.__color = v
         self.update_data()

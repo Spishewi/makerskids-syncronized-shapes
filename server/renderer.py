@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 # pylint: disable=no-member
 import pyray as pr
 
@@ -5,7 +7,36 @@ import pyray as pr
 import variables as g
 from server import kick_user
 
+# create a dataclass for a point and a rectangle
+# with integer values because pyray uses floats but doesn't support them...
+@dataclass()
+class IntPoint():
+    """
+    A dataclass for a point with integer values.
+    """
+    x: int
+    y: int
+
+
+@dataclass
+class IntRectangle():
+    """
+    A dataclass for a rectangle with integer values.
+    """
+    x: int
+    y: int
+    width: int
+    height: int
+
+
 class Renderer():
+    """
+    This class is responsible for rendering the shapes on the window.
+    """
+
+    WINDOW_SIZE = IntPoint(800, 500)
+    RENDER_AREA = IntRectangle(20, 20, 460, 460)
+
     def __init__(self):
         """
         Initializes a new Renderer object.
@@ -37,7 +68,7 @@ class Renderer():
 
         pr.draw_fps(20, 1)
 
-        pr.begin_scissor_mode(20, 20, 460, 460)
+        pr.begin_scissor_mode(self.RENDER_AREA.x, self.RENDER_AREA.y, self.RENDER_AREA.width, self.RENDER_AREA.height)
 
         pr.clear_background(pr.WHITE)
 
@@ -49,17 +80,17 @@ class Renderer():
                 # Do nothing for invalid shapes
 
             elif shape_type == "Rectangle":
-                self.__draw_rectangle(shape_data)
+                self.__draw_rectangle(shape_data, offset_x=self.RENDER_AREA.x, offset_y=self.RENDER_AREA.y)
 
             elif shape_type == "Ellipse":
-                self.__draw_ellipse(shape_data)
+                self.__draw_ellipse(shape_data, offset_x=self.RENDER_AREA.x, offset_y=self.RENDER_AREA.y)
 
             elif shape_type == "Line":
-                self.__draw_line(shape_data)
+                self.__draw_line(shape_data, offset_x=self.RENDER_AREA.x, offset_y=self.RENDER_AREA.y)
 
         pr.end_scissor_mode()
 
-        pr.draw_rectangle_lines(20, 20, 460, 460, pr.BLACK)
+        pr.draw_rectangle_lines(self.RENDER_AREA.x, self.RENDER_AREA.y, self.RENDER_AREA.width, self.RENDER_AREA.height, pr.BLACK)
 
         # Draw the usernames, sorted alphabetically
         pr.draw_text("Connected users :", 520, 20, 20, pr.BLACK)
@@ -72,7 +103,7 @@ class Renderer():
 
         pr.end_drawing()
 
-    def __draw_rectangle(self, shape_data: dict):
+    def __draw_rectangle(self, shape_data: dict, offset_x: int = 0, offset_y: int = 0):
         """
         Draws a rectangle on the window based on the given shape data.
 
@@ -80,8 +111,8 @@ class Renderer():
         """
         try:
             # Extract the data from the shape data dictionary
-            x = int(shape_data["__x"])
-            y = int(shape_data["__y"])
+            x = int(shape_data["__x"]) + offset_x
+            y = int(shape_data["__y"]) + offset_y
             width = int(shape_data["__width"])
             height = int(shape_data["__height"])
             color = pr.Color(*[int(i) for i in shape_data["__color"]], 255) # cast all values to int
@@ -95,7 +126,7 @@ class Renderer():
             print("Invalid shape data:", e)
             raise e
 
-    def __draw_ellipse(self, shape_data: dict):
+    def __draw_ellipse(self, shape_data: dict, offset_x: int = 0, offset_y: int = 0):
         """
         Draws an ellipse on the window based on the given shape data.
 
@@ -103,8 +134,8 @@ class Renderer():
         """
         try:
             # Extract the data from the shape data dictionary
-            x = int(shape_data["__x"])
-            y = int(shape_data["__y"])
+            x = int(shape_data["__x"]) + offset_x
+            y = int(shape_data["__y"]) + offset_y
             x_radius = float(shape_data["__x_radius"])
             y_radius = float(shape_data["__y_radius"])
             color = pr.Color(*[int(i) for i in shape_data["__color"]], 255) # cast all values to int
@@ -118,7 +149,7 @@ class Renderer():
             print("Invalid shape data:", e)
             raise e
 
-    def __draw_line(self, shape_data: dict):
+    def __draw_line(self, shape_data: dict, offset_x: int = 0, offset_y: int = 0):
         """
         Draws an line on the window based on the given shape data.
 
@@ -126,10 +157,10 @@ class Renderer():
         """
         try:
             # Extract the data from the shape data dictionary
-            x1 = int(shape_data["__x1"])
-            y1 = int(shape_data["__y1"])
-            x2 = int(shape_data["__x2"])
-            y2 = int(shape_data["__y2"])
+            x1 = int(shape_data["__x1"]) + offset_x
+            y1 = int(shape_data["__y1"]) + offset_y
+            x2 = int(shape_data["__x2"]) + offset_x
+            y2 = int(shape_data["__y2"]) + offset_y
             color = pr.Color(*[int(i) for i in shape_data["__color"]], 255) # cast all values to int
 
             # Draw the line
@@ -147,7 +178,7 @@ class Renderer():
         """
         self.__is_running = True
 
-        pr.init_window(800, 500, "Makers Kids Connect")
+        pr.init_window(self.WINDOW_SIZE.x, self.WINDOW_SIZE.y, "Makers Kids Connect")
         pr.set_target_fps(30)
 
         while not pr.window_should_close() and not self.__should_close:

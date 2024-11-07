@@ -179,7 +179,7 @@ class Renderer():
         self.__is_running = True
 
         pr.init_window(self.WINDOW_SIZE.x, self.WINDOW_SIZE.y, "Makers Kids Connect")
-        pr.set_target_fps(30)
+        pr.set_target_fps(60)
 
         while not pr.window_should_close() and not self.__should_close:
             # Draw the shapes on the window

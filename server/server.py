@@ -6,7 +6,11 @@ import socketio
 # pylint: disable-next=unused-wildcard-import,wildcard-import
 import variables as g
 
-sio = socketio.AsyncServer()
+sio = socketio.AsyncServer(
+    async_mode="aiohttp",
+    cors_allowed_origins="*",
+    debug=True
+)
 app = web.Application()
 sio.attach(app)
 
@@ -197,7 +201,7 @@ def kick_user(sid):
 app.router.add_static('/static', './web/static')
 
 # add the web renderer
-async def renderer_index(request):
+async def renderer_index(request): # pylint: disable=unused-argument
     """Serve the client-side application."""
     with open('./web/renderer/index.html', encoding='utf-8') as f:
         return web.Response(text=f.read(), content_type='text/html')

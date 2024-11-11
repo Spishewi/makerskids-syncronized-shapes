@@ -10,7 +10,7 @@ sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
 
-@sio.event
+@sio.event(namespace="/client")
 def connect(sid, environ): #pylint: disable=unused-argument
     """
     When a client connect, this function is called.
@@ -26,7 +26,7 @@ def connect(sid, environ): #pylint: disable=unused-argument
         # set the default client's username
         g.usernames[sid] = sid
 
-@sio.event
+@sio.event(namespace="/client")
 def disconnect(sid):
     """
     Handles the disconnection of a client. Removes all shapes associated 
@@ -46,7 +46,7 @@ def disconnect(sid):
 
     print(f"all {sid} shapes have been deleted")
 
-@sio.event
+@sio.event(namespace="/client")
 def set_username(sid, username):
     """
     Handles the setting of a username. Updates the server's data structures
@@ -76,7 +76,7 @@ def set_username(sid, username):
 
     return 200, "OK"
 
-@sio.event
+@sio.event(namespace="/client")
 async def create_shape(sid, shape_uuid, shape_type, shape_data):
     """
     Handles the creation of a new shape. Validates the input data,
@@ -118,7 +118,7 @@ async def create_shape(sid, shape_uuid, shape_type, shape_data):
 
     return 200, "OK"
 
-@sio.event
+@sio.event(namespace="/client")
 async def update_shape(sid, shape_uuid, shape_type, shape_data):
     """
     Handles the update of a shape. Validates the input data,
@@ -160,7 +160,7 @@ async def update_shape(sid, shape_uuid, shape_type, shape_data):
 
     return 200, "OK"
 
-@sio.event
+@sio.event(namespace="/client")
 async def delete_shape(sid, shape_uuid):
     """
     Handles the deletion of a shape.
@@ -192,3 +192,14 @@ def kick_user(sid):
     Kicks a user from the server.
     """
     asyncio.run(sio.disconnect(sid))
+
+# add the static files
+app.router.add_static('/static', './web/static')
+
+# add the web renderer
+async def renderer_index(request):
+    """Serve the client-side application."""
+    with open('./web/renderer/index.html', encoding='utf-8') as f:
+        return web.Response(text=f.read(), content_type='text/html')
+
+app.router.add_get('/renderer', renderer_index)

@@ -33,7 +33,7 @@ def connect_client(url: str) -> None:
     :param url: URL of the server
     """
     # Connect to the server
-    sio.connect(url)
+    sio.connect(url, namespaces=["/client"])
 
 def set_username(username: str):
     """
@@ -45,7 +45,7 @@ def set_username(username: str):
         raise ConnectionError("Please be connected to the server !")
 
     # Emit the set_username event with the provided username
-    sio.emit("set_username", username, callback=error_handler)
+    sio.emit("set_username", username, callback=error_handler, namespace="/client")
 
 def error_handler(status_code, message):
     """

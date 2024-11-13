@@ -37,7 +37,7 @@ class ClientNamespace(socketio.AsyncNamespace):
         Handles the disconnection of a client. Removes all shapes associated 
         with the client and cleans up client data from the server.
         """
-        print('disconnect ', sid)
+        print('disconnect client', sid)
 
 
         with g.shapes_data_lock, g.shapes_owner_lock, g.usernames_lock:

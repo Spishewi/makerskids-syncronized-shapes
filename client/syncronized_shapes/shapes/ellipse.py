@@ -2,7 +2,7 @@
 from .abstract_shape import SyncronizedShape
 
 class Ellipse(SyncronizedShape):
-    def __init__(self, x: float, y: float, x_radius: float, y_radius: float, color: tuple[int, int, int]) -> None:
+    def __init__(self, x: float | int, y: float | int, x_radius: float | int, y_radius: float | int, color: tuple[int, int, int] | list[int]) -> None:
         """
         Initializes a ellipse with the given position, radius, and color.
 
@@ -13,15 +13,29 @@ class Ellipse(SyncronizedShape):
         :param color: The color of the ellipse as an (R, G, B) tuple
         """
         # Set the x-coordinate of the ellipse
-        self.__x = x
+        if not (isinstance(x, float) or isinstance(x, int)):
+            raise TypeError("Expected float or int, got " + type(x).__name__)
+        self.__x = float(x)
+
         # Set the y-coordinate of the ellipse
-        self.__y = y
+        if not (isinstance(y, float) or isinstance(y, int)):
+            raise TypeError("Expected float or int, got " + type(y).__name__)
+        self.__y = float(y)
+
         # Set the x-radius of the ellipse
-        self.__x_radius = x_radius
+        if not (isinstance(x_radius, float) or isinstance(x_radius, int)):
+            raise TypeError("Expected float or int, got " + type(x_radius).__name__)
+        self.__x_radius = float(x_radius)
+
         # Set the y-radius of the ellipse
-        self.__y_radius = y_radius
+        if not (isinstance(y_radius, float) or isinstance(y_radius, int)):
+            raise TypeError("Expected float or int, got " + type(y_radius).__name__)
+        self.__y_radius = float(y_radius)
+
         # Set the color of the ellipse
-        self.__color = color
+        if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
+            raise TypeError("Expected tuple or list of length 3 containing ints between 0 and 255, got " + str(color))
+        self.__color = tuple(color)
 
         # Initialize the parent SyncronizedShape class
         super().__init__()
@@ -56,8 +70,10 @@ class Ellipse(SyncronizedShape):
         return self.__x
 
     @x.setter
-    def x(self, v: float):
-        self.__x = v
+    def x(self, v: float | int):
+        if not (isinstance(v, float) or isinstance(v, int)):
+            raise TypeError("Expected float or int, got " + type(v).__name__)
+        self.__x = float(v)
         self.update_data()
 
     @property
@@ -68,8 +84,10 @@ class Ellipse(SyncronizedShape):
         return self.__y
 
     @y.setter
-    def y(self, v: float):
-        self.__y = v
+    def y(self, v: float | int):
+        if not (isinstance(v, float) or isinstance(v, int)):
+            raise TypeError("Expected float or int, got " + type(v).__name__)
+        self.__y = float(v)
         self.update_data()
 
     @property
@@ -80,8 +98,10 @@ class Ellipse(SyncronizedShape):
         return self.__x_radius
 
     @x_radius.setter
-    def x_radius(self, v: float):
-        self.__x_radius = v
+    def x_radius(self, v: float | int):
+        if not (isinstance(v, float) or isinstance(v, int)):
+            raise TypeError("Expected float or int, got " + type(v).__name__)
+        self.__x_radius = float(v)
         self.update_data()
 
     @property
@@ -92,8 +112,10 @@ class Ellipse(SyncronizedShape):
         return self.__y_radius
 
     @y_radius.setter
-    def y_radius(self, v: float):
-        self.__y_radius = v
+    def y_radius(self, v: float | int):
+        if not (isinstance(v, float) or isinstance(v, int)):
+            raise TypeError("Expected float or int, got " + type(v).__name__)
+        self.__y_radius = float(v)
         self.update_data()
 
     @property
@@ -104,6 +126,8 @@ class Ellipse(SyncronizedShape):
         return self.__color
 
     @color.setter
-    def color(self, v: tuple[int, int, int]):
-        self.__color = v
+    def color(self, v: tuple[int, int, int] | list[int]):
+        if not (isinstance(v, tuple) or isinstance(v, list)) or len(v) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in v):
+            raise TypeError("Expected tuple or list of length 3 containing ints between 0 and 255, got " + str(v))
+        self.__color = tuple(v)
         self.update_data()

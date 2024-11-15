@@ -39,15 +39,23 @@ class ClientNamespace(socketio.AsyncNamespace):
         """
         print('disconnect client', sid)
 
-
         with g.shapes_data_lock, g.shapes_owner_lock, g.usernames_lock:
+            
+            #list of shapes that has been deleted
+            deleted_shapes = []
+
             # Remove all shapes associated with the client
             for shape_uuid in g.shapes_owner[sid]:
+                deleted_shapes.append(shape_uuid)
                 del g.shapes_data[shape_uuid]
 
             # Remove the client from the list of shape owners
             del g.shapes_owner[sid]
             del g.usernames[sid]
+
+            asyncio.run(
+                RendererNamespace.emit_shapes_update(sid, deleted_shapes=deleted_shapes)
+            )
 
         print(f"all {sid} shapes have been deleted")
 
@@ -121,6 +129,8 @@ class ClientNamespace(socketio.AsyncNamespace):
             g.shapes_data[shape_uuid] = (shape_type, shape_data)
             g.shapes_owner[sid].add(shape_uuid)
 
+            await RendererNamespace.emit_shapes_update(sid, new_shapes=[(shape_uuid, shape_type, shape_data)])
+
         return 200, "OK"
 
 
@@ -161,7 +171,9 @@ class ClientNamespace(socketio.AsyncNamespace):
 
             # we add the shapes to ours data
             g.shapes_data[shape_uuid] = (shape_type, shape_data)
-            g.shapes_owner[sid].add(shape_uuid)
+            #g.shapes_owner[sid].add(shape_uuid) # I think i don't need this
+
+            await RendererNamespace.emit_shapes_update(sid, updated_shapes=[(shape_uuid, shape_type, shape_data)])
 
         return 200, "OK"
 
@@ -190,6 +202,8 @@ class ClientNamespace(socketio.AsyncNamespace):
             # remove the shape from the client's list of shapes
             g.shapes_owner[sid].discard(shape_uuid)
 
+            await RendererNamespace.emit_shapes_update(sid, deleted_shapes=[shape_uuid])
+
         return 200, "OK"
 
     # utils
@@ -200,11 +214,21 @@ def kick_user(sid):
     asyncio.run(sio.disconnect(sid))
 
 class RendererNamespace(socketio.AsyncNamespace):
-    async def on_connect(self, sid, environ):
+    def on_connect(self, sid, environ):
         print("connect renderer", sid)
 
-    async def on_disconnect(self, sid):
+    def on_disconnect(self, sid):
         print("disconnect renderer", sid)
+
+    async def on_get_shapes(self, sid):
+        with g.shapes_data_lock:
+            return g.shapes_data
+        
+    @staticmethod
+    async def emit_shapes_update(sid, deleted_shapes:list = [], updated_shapes:list = [], new_shapes:list = []):
+        await sio.emit("shapes_update", {"deleted": deleted_shapes, "updated": updated_shapes, "new": new_shapes}, namespace="/renderer")
+        
+    
 
 # register the namespaces
 sio.register_namespace(ClientNamespace("/client"))

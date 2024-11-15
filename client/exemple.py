@@ -28,3 +28,10 @@ while True:
 
     #print(r1.x, r1.y)
     time.sleep(.03)
+
+
+
+
+jhblvyu = 5
+
+r1.x = jhblvyu

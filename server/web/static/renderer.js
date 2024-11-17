@@ -4,6 +4,7 @@ console.log(socket);
 
 // Global variable to store the shapes
 let shapes = {};
+let usernames = [];
 
 // Event handler for the "connect" event
 socket.on("connect", () => {
@@ -12,11 +13,19 @@ socket.on("connect", () => {
         shapes = data;
         console.log("Shapes: ", shapes);
     });
+    socket.emit("get_usernames", (data) => {
+        console.log("Usernames: ", data);
+        update_usernames(data);
+    })
 })
 
 // Event handler for the "disconnect" event
 socket.on("disconnect", () => {
     console.log("Disconnected from the server.");
+})
+
+socket.on("usernames_update", (data) => {
+    update_usernames(data);
 })
 
 // Event handler for the "shapes_update" event
@@ -48,6 +57,23 @@ socket.on("shapes_update", (data) => {
         }
     }
 })
+
+function update_usernames(data){
+    console.log("update_usernames: ", data);
+    if (data === undefined) return;
+
+    usernames = data
+
+    usernames_list = document.getElementById("usernames-list");
+    usernames_list.innerHTML = "";
+
+    for(const [uuid, username] of Object.entries(usernames)){
+        li = document.createElement("li");
+        li.innerText = username;
+
+        usernames_list.appendChild(li);
+    }
+}
 
 /**
  * Draws the canvas by iterating through the shapes and calling the appropriate drawing function.
@@ -175,4 +201,3 @@ setInterval(() => {
 setInterval(() => {
     console.log("Shapes: ", shapes);
 }, 5000);
-

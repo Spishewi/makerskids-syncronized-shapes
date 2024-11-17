@@ -15,6 +15,10 @@ app = web.Application()
 sio.attach(app)
 
 class ClientNamespace(socketio.AsyncNamespace):
+    """
+    Namespace for the client.
+    """
+
     # events
     async def on_connect(self, sid, environ): #pylint: disable=unused-argument
         """
@@ -29,6 +33,8 @@ class ClientNamespace(socketio.AsyncNamespace):
 
         # set the default client's username
         g.usernames[sid] = sid
+
+        await RendererNamespace.emit_usernames_update(sid)
 
 
     async def on_disconnect(self, sid):
@@ -51,7 +57,12 @@ class ClientNamespace(socketio.AsyncNamespace):
         del g.shapes_owner[sid]
         del g.usernames[sid]
 
+        # emit to the renderer the shapes that have been deleted
         await RendererNamespace.emit_shapes_update(sid, deleted_shapes=deleted_shapes)
+
+        # emit to the renderer the updated list of usernames
+        await RendererNamespace.emit_usernames_update(sid)
+
 
         print(f"all {sid} shapes have been deleted")
 
@@ -81,6 +92,9 @@ class ClientNamespace(socketio.AsyncNamespace):
 
         #set the username
         g.usernames[sid] = username
+
+        # emit to the renderer the updated list of usernames
+        await RendererNamespace.emit_usernames_update(sid)
 
         return 200, "OK"
 
@@ -124,6 +138,7 @@ class ClientNamespace(socketio.AsyncNamespace):
         g.shapes_data[shape_uuid] = (shape_type, shape_data)
         g.shapes_owner[sid].add(shape_uuid)
 
+        # emit to the renderer the new shape
         await RendererNamespace.emit_shapes_update(sid, new_shapes=[(shape_uuid, shape_type, shape_data)])
 
         return 200, "OK"
@@ -168,6 +183,7 @@ class ClientNamespace(socketio.AsyncNamespace):
         g.shapes_data[shape_uuid] = (shape_type, shape_data)
         #g.shapes_owner[sid].add(shape_uuid) # I think i don't need this
 
+        # emit to the renderer the updated shape
         await RendererNamespace.emit_shapes_update(sid, updated_shapes=[(shape_uuid, shape_type, shape_data)])
 
         return 200, "OK"
@@ -196,7 +212,8 @@ class ClientNamespace(socketio.AsyncNamespace):
 
         # remove the shape from the client's list of shapes
         g.shapes_owner[sid].discard(shape_uuid)
-
+        
+        # emit to the renderer the deleted shape
         await RendererNamespace.emit_shapes_update(sid, deleted_shapes=[shape_uuid])
 
         return 200, "OK"
@@ -209,6 +226,11 @@ def kick_user(sid):
     asyncio.run(sio.disconnect(sid))
 
 class RendererNamespace(socketio.AsyncNamespace):
+    """
+    Namespace for the renderer.
+    """
+
+    # events
     def on_connect(self, sid, environ):
         """
         Triggered when the renderer connects to the server.
@@ -236,7 +258,17 @@ class RendererNamespace(socketio.AsyncNamespace):
         :param sid: Session ID for the client
         """
         return g.shapes_data
+    
+    async def on_get_usernames(self, sid):
+        """
+        Triggered when the renderer needs a full update of the usernames.
+        Returns the current state of all usernames in the server's data structures.
 
+        :param sid: Session ID for the client
+        """
+        return g.usernames
+
+    # emits
     @staticmethod
     async def emit_shapes_update(sid, deleted_shapes:list = None, updated_shapes:list = None, new_shapes:list = None):
         """
@@ -254,8 +286,25 @@ class RendererNamespace(socketio.AsyncNamespace):
         new_shapes = [] if new_shapes is None else new_shapes
 
         # emit the event to the renderer
-        await sio.emit("shapes_update", {"deleted": deleted_shapes, "updated": updated_shapes, "new": new_shapes}, namespace="/renderer")
+        await sio.emit("shapes_update", {
+            "deleted": deleted_shapes,
+            "updated": updated_shapes,
+            "new": new_shapes
+            },
+            namespace="/renderer"
+        )
 
+    @staticmethod
+    async def emit_usernames_update(sid):
+        """
+        Emits a "usernames_update" event to the renderer client with the given sid.
+        The event contains the list of usernames.
+
+        :param sid: Session ID for the client
+        :param usernames: List of usernames
+        """
+        # emit the event to the renderer
+        await sio.emit("usernames_update", g.usernames, namespace="/renderer")
 
 # register the namespaces
 sio.register_namespace(ClientNamespace("/client"))

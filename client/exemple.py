@@ -10,7 +10,7 @@ from syncronized_shapes import (
     Line
 )
 
-connect_client('http://localhost:8080')
+connect_client('http://172.16.17.220:8080')
 #set_username("Bob")
 
 randomColor = (random.randint(255//3, 255//3*2),
@@ -28,10 +28,3 @@ while True:
 
     #print(r1.x, r1.y)
     time.sleep(.03)
-
-
-
-
-jhblvyu = 5
-
-r1.x = jhblvyu

@@ -16,7 +16,7 @@ sio.attach(app)
 
 class ClientNamespace(socketio.AsyncNamespace):
     # events
-    def on_connect(self, sid, environ): #pylint: disable=unused-argument
+    async def on_connect(self, sid, environ): #pylint: disable=unused-argument
         """
         When a client connect, this function is called.
         For now, it just creates a new empty set of shapes.
@@ -32,7 +32,7 @@ class ClientNamespace(socketio.AsyncNamespace):
             g.usernames[sid] = sid
 
 
-    def on_disconnect(self, sid):
+    async def on_disconnect(self, sid):
         """
         Handles the disconnection of a client. Removes all shapes associated 
         with the client and cleans up client data from the server.
@@ -53,9 +53,9 @@ class ClientNamespace(socketio.AsyncNamespace):
             del g.shapes_owner[sid]
             del g.usernames[sid]
 
-            asyncio.run(
-                RendererNamespace.emit_shapes_update(sid, deleted_shapes=deleted_shapes)
-            )
+            
+            await RendererNamespace.emit_shapes_update(sid, deleted_shapes=deleted_shapes)
+            
 
         print(f"all {sid} shapes have been deleted")
 

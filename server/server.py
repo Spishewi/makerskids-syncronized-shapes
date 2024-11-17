@@ -23,13 +23,12 @@ class ClientNamespace(socketio.AsyncNamespace):
         """
         print("connect client", sid)
 
-        with g.shapes_owner_lock, g.usernames_lock:
-            # create an empty set of shapes for the client
-            # this will be used to store the shape UUIDs
-            g.shapes_owner[sid] = set()
+        # create an empty set of shapes for the client
+        # this will be used to store the shape UUIDs
+        g.shapes_owner[sid] = set()
 
-            # set the default client's username
-            g.usernames[sid] = sid
+        # set the default client's username
+        g.usernames[sid] = sid
 
 
     async def on_disconnect(self, sid):
@@ -39,23 +38,20 @@ class ClientNamespace(socketio.AsyncNamespace):
         """
         print('disconnect client', sid)
 
-        with g.shapes_data_lock, g.shapes_owner_lock, g.usernames_lock:
-            
-            #list of shapes that has been deleted
-            deleted_shapes = []
 
-            # Remove all shapes associated with the client
-            for shape_uuid in g.shapes_owner[sid]:
-                deleted_shapes.append(shape_uuid)
-                del g.shapes_data[shape_uuid]
+        #list of shapes that has been deleted
+        deleted_shapes = []
 
-            # Remove the client from the list of shape owners
-            del g.shapes_owner[sid]
-            del g.usernames[sid]
+        # Remove all shapes associated with the client
+        for shape_uuid in g.shapes_owner[sid]:
+            deleted_shapes.append(shape_uuid)
+            del g.shapes_data[shape_uuid]
 
-            
-            await RendererNamespace.emit_shapes_update(sid, deleted_shapes=deleted_shapes)
-            
+        # Remove the client from the list of shape owners
+        del g.shapes_owner[sid]
+        del g.usernames[sid]
+
+        await RendererNamespace.emit_shapes_update(sid, deleted_shapes=deleted_shapes)
 
         print(f"all {sid} shapes have been deleted")
 
@@ -69,23 +65,22 @@ class ClientNamespace(socketio.AsyncNamespace):
         :param username: String containing the username
         """
 
-        with g.usernames_lock:
-            # basics sanity checks
+        # basics sanity checks
 
-            # username must be a string
-            if not isinstance(username, str):
-                return 400, "USERNAME MUST BE A STRING"
+        # username must be a string
+        if not isinstance(username, str):
+            return 400, "USERNAME MUST BE A STRING"
 
-            # Do nothing if the username is already set
-            if g.usernames[sid] == username:
-                return 200, "OK"
+        # Do nothing if the username is already set
+        if g.usernames[sid] == username:
+            return 200, "OK"
 
-            # Username must be unique
-            if username in g.usernames.values():
-                return 400, "USERNAME ALREADY EXISTS"
+        # Username must be unique
+        if username in g.usernames.values():
+            return 400, "USERNAME ALREADY EXISTS"
 
-            #set the username
-            g.usernames[sid] = username
+        #set the username
+        g.usernames[sid] = username
 
         return 200, "OK"
 
@@ -102,34 +97,34 @@ class ClientNamespace(socketio.AsyncNamespace):
 
         :return: a tuple of (status, message)
         """
-        with g.shapes_data_lock, g.shapes_owner_lock:
-            # basics sanity checks
 
-            # shape_uuid must be a string
-            if not isinstance(shape_uuid, str):
-                return 400, "SHAPE_UUID MUST BE A STRING"
+        # basics sanity checks
 
-            #shape_type must be a string
-            if not isinstance(shape_type, str):
-                return 400, "SHAPE_TYPE MUST BE A STRING"
+        # shape_uuid must be a string
+        if not isinstance(shape_uuid, str):
+            return 400, "SHAPE_UUID MUST BE A STRING"
 
-            # shape_type must be one of the supported shapes
-            if shape_type not in g.SUPPORTED_SHAPES:
-                return 400, "SHAPE_TYPE MUST BE A SUPPORTED SHAPE"
+        #shape_type must be a string
+        if not isinstance(shape_type, str):
+            return 400, "SHAPE_TYPE MUST BE A STRING"
 
-            # shape_data must be a dictionary
-            if not isinstance(shape_data, dict):
-                return 400, "SHAPE_DATA MUST BE A DICTIONARY"
+        # shape_type must be one of the supported shapes
+        if shape_type not in g.SUPPORTED_SHAPES:
+            return 400, "SHAPE_TYPE MUST BE A SUPPORTED SHAPE"
 
-            # shape musn't already exist
-            if shape_uuid in g.shapes_data:
-                return 400, "THIS SHAPE ALREADY EXISTS. YOU CAN'T CREATE A SHAPE THAT ALREADY EXISTS"
+        # shape_data must be a dictionary
+        if not isinstance(shape_data, dict):
+            return 400, "SHAPE_DATA MUST BE A DICTIONARY"
 
-            # Add the new shape to the server's data structures
-            g.shapes_data[shape_uuid] = (shape_type, shape_data)
-            g.shapes_owner[sid].add(shape_uuid)
+        # shape musn't already exist
+        if shape_uuid in g.shapes_data:
+            return 400, "THIS SHAPE ALREADY EXISTS. YOU CAN'T CREATE A SHAPE THAT ALREADY EXISTS"
 
-            await RendererNamespace.emit_shapes_update(sid, new_shapes=[(shape_uuid, shape_type, shape_data)])
+        # Add the new shape to the server's data structures
+        g.shapes_data[shape_uuid] = (shape_type, shape_data)
+        g.shapes_owner[sid].add(shape_uuid)
+
+        await RendererNamespace.emit_shapes_update(sid, new_shapes=[(shape_uuid, shape_type, shape_data)])
 
         return 200, "OK"
 
@@ -146,34 +141,34 @@ class ClientNamespace(socketio.AsyncNamespace):
 
         :return: a tuple of (status, message)
         """
-        with g.shapes_data_lock, g.shapes_owner_lock:
-            # basics sanity checks
 
-            # shape_uuid must be a string
-            if not isinstance(shape_uuid, str):
-                return 400, "SHAPE_UUID MUST BE A STRING"
+        # basics sanity checks
 
-            #shape_type must be a string
-            if not isinstance(shape_type, str):
-                return 400, "SHAPE_TYPE MUST BE A STRING"
+        # shape_uuid must be a string
+        if not isinstance(shape_uuid, str):
+            return 400, "SHAPE_UUID MUST BE A STRING"
 
-            # shape_data must be a dictionary
-            if not isinstance(shape_data, dict):
-                return 400, "SHAPE_DATA MUST BE A DICTIONARY"
+        #shape_type must be a string
+        if not isinstance(shape_type, str):
+            return 400, "SHAPE_TYPE MUST BE A STRING"
 
-            # shape musn't already exist
-            if shape_uuid not in g.shapes_data:
-                return 400, "THIS SHAPE DOESN'T EXIST"
+        # shape_data must be a dictionary
+        if not isinstance(shape_data, dict):
+            return 400, "SHAPE_DATA MUST BE A DICTIONARY"
 
-            # shape must be of the same type
-            if shape_type != g.shapes_data[shape_uuid][0]:
-                return 400, "YOU CAN'T UPDATE A THIS SHAPE TO A DIFFERENT TYPE"
+        # shape musn't already exist
+        if shape_uuid not in g.shapes_data:
+            return 400, "THIS SHAPE DOESN'T EXIST"
 
-            # we add the shapes to ours data
-            g.shapes_data[shape_uuid] = (shape_type, shape_data)
-            #g.shapes_owner[sid].add(shape_uuid) # I think i don't need this
+        # shape must be of the same type
+        if shape_type != g.shapes_data[shape_uuid][0]:
+            return 400, "YOU CAN'T UPDATE A THIS SHAPE TO A DIFFERENT TYPE"
 
-            await RendererNamespace.emit_shapes_update(sid, updated_shapes=[(shape_uuid, shape_type, shape_data)])
+        # we add the shapes to ours data
+        g.shapes_data[shape_uuid] = (shape_type, shape_data)
+        #g.shapes_owner[sid].add(shape_uuid) # I think i don't need this
+
+        await RendererNamespace.emit_shapes_update(sid, updated_shapes=[(shape_uuid, shape_type, shape_data)])
 
         return 200, "OK"
 
@@ -187,22 +182,22 @@ class ClientNamespace(socketio.AsyncNamespace):
         :param shape_uuid: String containing shape UUID
         :return: a tuple of (status, message)
         """
-        with g.shapes_data_lock, g.shapes_owner_lock:
-            # basics sanity checks
-            if not isinstance(shape_uuid, str):
-                return 400, "DATA IS NOT A STRING"
 
-            # if it exists
-            if shape_uuid not in g.shapes_data:
-                return 400, "THIS SHAPE DOESN'T EXIST"
+        # basics sanity checks
+        if not isinstance(shape_uuid, str):
+            return 400, "DATA IS NOT A STRING"
 
-            # remove the shape from the server's data structures
-            del g.shapes_data[shape_uuid]
+        # if it exists
+        if shape_uuid not in g.shapes_data:
+            return 400, "THIS SHAPE DOESN'T EXIST"
 
-            # remove the shape from the client's list of shapes
-            g.shapes_owner[sid].discard(shape_uuid)
+        # remove the shape from the server's data structures
+        del g.shapes_data[shape_uuid]
 
-            await RendererNamespace.emit_shapes_update(sid, deleted_shapes=[shape_uuid])
+        # remove the shape from the client's list of shapes
+        g.shapes_owner[sid].discard(shape_uuid)
+
+        await RendererNamespace.emit_shapes_update(sid, deleted_shapes=[shape_uuid])
 
         return 200, "OK"
 
@@ -215,20 +210,52 @@ def kick_user(sid):
 
 class RendererNamespace(socketio.AsyncNamespace):
     def on_connect(self, sid, environ):
+        """
+        Triggered when the renderer connects to the server.
+        Prints a message to the console.
+
+        :param sid: Session ID for the client
+        :param environ: Environment dictionary containing request parameters
+        """
         print("connect renderer", sid)
 
     def on_disconnect(self, sid):
+        """
+        Triggered when the renderer disconnects.
+        Prints a message to the console.
+
+        :param sid: Session ID for the client
+        """
         print("disconnect renderer", sid)
 
     async def on_get_shapes(self, sid):
-        with g.shapes_data_lock:
-            return g.shapes_data
-        
+        """
+        Triggered when the renderer needs a full update of the shapes.
+        Returns the current state of all shapes in the server's data structures.
+
+        :param sid: Session ID for the client
+        """
+        return g.shapes_data
+
     @staticmethod
-    async def emit_shapes_update(sid, deleted_shapes:list = [], updated_shapes:list = [], new_shapes:list = []):
+    async def emit_shapes_update(sid, deleted_shapes:list = None, updated_shapes:list = None, new_shapes:list = None):
+        """
+        Emits a "shapes_update" event to the renderer client with the given sid.
+        The event contains the list of deleted, updated and new shapes.
+
+        :param sid: Session ID for the client
+        :param deleted_shapes: List of shape UUIDs that have been deleted
+        :param updated_shapes: List of shape UUIDs and data that have been updated
+        :param new_shapes: List of shape UUIDs and data that have been added
+        """
+        # set default values
+        deleted_shapes = [] if deleted_shapes is None else deleted_shapes
+        updated_shapes = [] if updated_shapes is None else updated_shapes
+        new_shapes = [] if new_shapes is None else new_shapes
+
+        # emit the event to the renderer
         await sio.emit("shapes_update", {"deleted": deleted_shapes, "updated": updated_shapes, "new": new_shapes}, namespace="/renderer")
-        
-    
+
 
 # register the namespaces
 sio.register_namespace(ClientNamespace("/client"))

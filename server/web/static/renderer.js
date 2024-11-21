@@ -96,8 +96,11 @@ function draw_canvas() {
 			// Draw a rectangle
 			draw_rect(ctx, shape[1]);
 		} else if (shape[0] == "SpaceShip") {
-			// Draw a rectangle
+			// Draw a spaceshit
 			draw_spaceship(ctx, shape[1]);
+		} else if (shape[0] == "Bullet") {
+			// Draw an bullet
+			draw_bullet(ctx, shape[1]);
 		} else if (shape[0] == "Ellipse") {
 			// Draw an ellipse
 			draw_ellipse(ctx, shape[1]);
@@ -134,6 +137,17 @@ function draw_rect(ctx, data) {
 	ctx.fillRect(x, y, width, height);
 }
 
+function draw_bullet(ctx, data) {
+	const { __x: x, __y: y, __color: color } = data;
+	const radius = 3;
+
+	ctx.beginPath();
+	ctx.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI);
+	ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+	ctx.fill();
+	ctx.strokeStyle = `black`;
+	ctx.stroke();
+}
 /**
  * Draws an ellipse on the canvas.
  * @param {CanvasRenderingContext2D} ctx - The 2D rendering context for the drawing surface of the canvas.
@@ -233,10 +247,11 @@ function draw_spaceship_foot(ctx, offsetWidth, height, color) {
 	ctx.moveTo(x + offsetWidth * 0.85, y);
 	ctx.quadraticCurveTo(
 		x + offsetWidth * 2,
-		y + height * 0.2,
-		x + offsetWidth * 0.75,
+		y + height * 0.15,
+		x + offsetWidth * 1.2,
 		y + height * 0.45
 	);
+	ctx.lineTo(x + offsetWidth, y + height * 0.45);
 	ctx.quadraticCurveTo(
 		x + offsetWidth * 1.2,
 		y + height * 0.2,
@@ -244,8 +259,8 @@ function draw_spaceship_foot(ctx, offsetWidth, height, color) {
 		y + height * 0.25
 	);
 	ctx.lineWidth = 0.5;
-	ctx.fillStyle = "#000000";
-	ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+	ctx.fillStyle = "#000000"; //`rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+	ctx.strokeStyle = "#000000";
 	ctx.closePath();
 	ctx.fill();
 	ctx.stroke();

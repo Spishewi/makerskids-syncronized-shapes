@@ -5,6 +5,7 @@ from .network import connect_client, set_username
 from .shapes.rectangle import Rectangle
 from .shapes.ellipse import Ellipse
 from .shapes.line import Line
+from .shapes.spaceship import SpaceShip
 
 # utility functions
 from .utils import map_value

@@ -1,7 +1,8 @@
 SUPPORTED_SHAPES = [
     "Rectangle",
     "Ellipse",
-    "Line"
+    "Line",
+    "SpaceShip"
     ]
 
 # list of all the shapes with their data (dict[shape_uuid, dict])

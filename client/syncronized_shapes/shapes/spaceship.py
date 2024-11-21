@@ -91,7 +91,7 @@ class SpaceShip(SyncronizedShape):
         """
         return self.__rotation
 
-    @y.setter
+    @rotation.setter
     def rotation(self, v: float | int):
         if not (isinstance(v, float) or isinstance(v, int)):
             raise TypeError("Expected float or int, got " + type(v).__name__)

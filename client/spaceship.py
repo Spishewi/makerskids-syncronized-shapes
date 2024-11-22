@@ -41,4 +41,4 @@ while True:
     #print(r1.x, r1.y)
     r1.update()
     r2.update()
-    time.sleep(.003)
+    time.sleep(.03)

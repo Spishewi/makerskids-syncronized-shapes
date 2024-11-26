@@ -1,11 +1,12 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: grid;
-    grid-template-areas: "canvas usernames";
+
+    display: flex;
+    flex-direction: row;
 
     min-height: 100dvh;
     margin: 0;
-    padding: 25px;
+    padding: 0;
     
     box-sizing: border-box;
 
@@ -13,9 +14,22 @@ body {
 
 #canvas-renderer {
     border: 1px solid black;
+    margin: 25px;
 }
 
-#usernames-container {
-    grid-area: usernames;
+#side-menu {
+    grid-area: side-menu;
     padding: 0;
+    flex-grow: 1;
+}
+
+#side-menu > section {
+    padding: 25px;
+    margin: 25px;
+    border: 1px solid black;
+
+}
+
+#memo-area {
+    font-size: 1.7rem;
 }

@@ -7,13 +7,22 @@
     <link rel="stylesheet" href="/static/renderer.css">
 </head>
 <body>
-    <canvas width="800" height="600", id="canvas-renderer"></canvas>
-    <section id="usernames-container">
-        <h2>Usernames :</h2>
-        <ul id="usernames-list">
-    
-        </ul>
+    <canvas width="1200" height="1000", id="canvas-renderer"></canvas>
+    <section id="side-menu">
+        <section id="usernames-container">
+            <h2>Connected users :</h2>
+            <ul id="usernames-list">Loading...</ul>
+        </section>
+        <section>
+            <h2>Memo :</h2>
+            <textarea name="" id="memo-area" height="50"></textarea>
+        </section>
+        <section id="debug-menu">
+            <h2>Debug :</h2>
+            <pre id="debug-pre">Loading...</pre>
+        </section>
     </section>
+    
     
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>

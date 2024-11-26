@@ -7,7 +7,9 @@ from syncronized_shapes import (
     set_username,
     Rectangle,
     Ellipse,
-    Line
+    Line,
+    SpaceShip,
+    Bullet
 )
 
 connect_client('http://127.0.0.1:8080')#172.16.17.220
@@ -17,7 +19,7 @@ randomColor = (random.randint(255//3, 255//3*2),
                random.randint(255//3, 255//3*2),
                random.randint(255//3, 255//3*2))
 
-r1 = Line(0, 0, 50, 75, randomColor)
+r1 = Rectangle(0, 0, 50, 75, randomColor)
 
 offsetx = random.randint(0, 100)
 offsety = random.randint(0, 100)

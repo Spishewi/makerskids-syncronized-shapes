@@ -310,6 +310,15 @@ function draw_line(ctx, data) {
 	ctx.stroke(); // Render the line
 }
 
+// Update the debug menu every seconds
+setInterval(() => {
+	canvas = document.getElementById("canvas-renderer");
+	debug_pre = document.getElementById("debug-pre");
+
+	debug_pre.innerText = `Canvas size : ${canvas.width}x${canvas.height}\n`;
+	debug_pre.innerText += `\Number of shapes : ${Object.keys(shapes).length}`;
+}, 1000);
+
 // Draw the canvas 60 times per second
 setInterval(() => {
 	draw_canvas();

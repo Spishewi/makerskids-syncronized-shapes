@@ -2,3 +2,5 @@
 venv/
 .venv/
 .env
+client/meredith.py
+server/test.py

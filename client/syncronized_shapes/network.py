@@ -2,6 +2,7 @@ import sys
 import socketio
 
 sio = socketio.Client()
+_canvas_size_cache: dict[str, int] | None = None
 
 @sio.event
 def connect():
@@ -34,6 +35,32 @@ def connect_client(url: str) -> None:
     """
     # Connect to the server
     sio.connect(url, namespaces=["/client"])
+
+def get_canvas_size(force_refresh: bool = False) -> dict[str, int]:
+    """Return the renderer canvas size defined by the server.
+
+    :param force_refresh: If True, always request fresh data from server.
+    :return: Dictionary with "width" and "height" integer keys.
+    """
+    global _canvas_size_cache
+
+    if not sio.connected:
+        raise ConnectionError("Please be connected to the server !")
+
+    if _canvas_size_cache is not None and not force_refresh:
+        return _canvas_size_cache
+
+    data = sio.call("get_canvas_size", namespace="/client", timeout=2)
+    if not isinstance(data, dict):
+        raise RuntimeError("Invalid canvas size payload from server")
+
+    width = data.get("width")
+    height = data.get("height")
+    if not isinstance(width, int) or not isinstance(height, int):
+        raise RuntimeError("Canvas size payload must contain integer width and height")
+
+    _canvas_size_cache = {"width": width, "height": height}
+    return _canvas_size_cache
 
 def set_username(username: str):
     """

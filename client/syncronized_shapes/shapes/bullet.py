@@ -1,5 +1,7 @@
 #pylint: disable-next=relative-beyond-top-level
 from .abstract_shape import SyncronizedShape
+# pylint: disable-next=relative-beyond-top-level
+from ..network import get_canvas_size
 import math
 
 
@@ -45,8 +47,8 @@ class Bullet(SyncronizedShape):
             '__x': self.__x,
             # The y-coordinate of the bullet
             '__y': self.__y,
-            # The y-coordinate of the bullet
-            '__y': self.__y,
+            # The angle of the bullet (kept for future renderer usage)
+            '__angle': self.__angle,
             # The color of the bullet as an (R, G, B) tuple
             '__color': self.__color
         }
@@ -114,4 +116,8 @@ class Bullet(SyncronizedShape):
         self.update_data()
 
     def isOut(self):
-        return self.__x < 0 or self.__y < 0 or self.__y > 500 or self.__x > 500
+        canvas_size = get_canvas_size()
+        width = canvas_size["width"]
+        height = canvas_size["height"]
+
+        return self.__x < 0 or self.__y < 0 or self.__y > height or self.__x > width

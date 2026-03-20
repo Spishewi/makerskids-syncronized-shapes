@@ -121,17 +121,21 @@ class SpaceShip(SyncronizedShape):
         self.update_data()
 
     def shoot(self):
-        if len(self.__bullets)<=MAX_BULLETS:
+        # Keep at most MAX_BULLETS active bullets.
+        if len(self.__bullets) < MAX_BULLETS:
             dx = math.sin(math.radians(self.__rotation)) * HEIGHT
             dy = -math.cos(math.radians(self.__rotation)) * HEIGHT
             b = Bullet(self.__x+dx, self.__y+dy, self.__rotation, self.color)
             self.__bullets.append(b)
     
     def update(self):
+        # Build a new list to avoid removing from the list while iterating.
+        active_bullets = []
         for b in self.__bullets:
             b.update()
-            if(b.isOut()):
-                self.__bullets.remove(b)
+            if not b.isOut():
+                active_bullets.append(b)
+        self.__bullets = active_bullets
 
         
         

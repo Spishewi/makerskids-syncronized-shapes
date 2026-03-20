@@ -8,9 +8,27 @@ console.log(socket);
 let shapes = {};
 let usernames = [];
 
+function apply_canvas_size(data) {
+	if (!data || typeof data.width !== "number" || typeof data.height !== "number") {
+		return;
+	}
+
+	const canvas = document.getElementById("canvas-renderer");
+	if (!canvas) {
+		return;
+	}
+
+	canvas.width = data.width;
+	canvas.height = data.height;
+}
+
 // Event handler for the "connect" event
 socket.on("connect", () => {
 	console.log("Connected to the server.");
+	socket.emit("get_canvas_size", (data) => {
+		console.log("Canvas size: ", data);
+		apply_canvas_size(data);
+	});
 	socket.emit("get_shapes", (data) => {
 		shapes = data;
 		console.log("Shapes: ", shapes);

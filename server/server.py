@@ -257,6 +257,14 @@ class ClientNamespace(socketio.AsyncNamespace):
 
         return 200, "OK"
 
+    async def on_get_canvas_size(self, sid):
+        """Return the renderer canvas size configured on the server."""
+        # sid is kept for API symmetry with other events.
+        return {
+            "width": c.RENDERER_CANVAS_WIDTH,
+            "height": c.RENDERER_CANVAS_HEIGHT,
+        }
+
 class RendererNamespace(socketio.AsyncNamespace):
     """
     Namespace for the renderer.
@@ -299,6 +307,14 @@ class RendererNamespace(socketio.AsyncNamespace):
         :param sid: Session ID for the client
         """
         return g.usernames
+
+    async def on_get_canvas_size(self, sid):
+        """Return the renderer canvas size configured on the server."""
+        # sid is kept for API symmetry with other events.
+        return {
+            "width": c.RENDERER_CANVAS_WIDTH,
+            "height": c.RENDERER_CANVAS_HEIGHT,
+        }
 
     # emits
     @staticmethod

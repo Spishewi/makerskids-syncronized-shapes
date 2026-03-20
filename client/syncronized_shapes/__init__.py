@@ -1,5 +1,6 @@
 # networks related functions
-from .network import connect_client, set_username
+from .network import connect_client, set_username, get_canvas_size
+from .constants import set_shape_updates_per_second
 
 # shapes related functions
 from .shapes.rectangle import Rectangle
@@ -15,6 +16,8 @@ from .utils import map_value
 __all__ = [
     "connect_client",
     "set_username",
+    "get_canvas_size",
+    "set_shape_updates_per_second",
 
     "Rectangle",
     "Ellipse",

@@ -1,7 +1,7 @@
-import asyncio
-
 from aiohttp import web
 import socketio
+
+import constants as c
 
 # pylint: disable-next=unused-wildcard-import,wildcard-import
 import variables as g
@@ -44,18 +44,21 @@ class ClientNamespace(socketio.AsyncNamespace):
         """
         print('disconnect client', sid)
 
+        # Make disconnect idempotent: client can already be partially removed.
+        if sid not in g.shapes_owner and sid not in g.usernames:
+            return
 
         #list of shapes that has been deleted
         deleted_shapes = []
 
         # Remove all shapes associated with the client
-        for shape_uuid in g.shapes_owner[sid]:
+        for shape_uuid in g.shapes_owner.get(sid, set()):
             deleted_shapes.append(shape_uuid)
-            del g.shapes_data[shape_uuid]
+            g.shapes_data.pop(shape_uuid, None)
 
         # Remove the client from the list of shape owners
-        del g.shapes_owner[sid]
-        del g.usernames[sid]
+        g.shapes_owner.pop(sid, None)
+        g.usernames.pop(sid, None)
 
         # emit to the renderer the shapes that have been deleted
         await RendererNamespace.emit_shapes_update(sid, deleted_shapes=deleted_shapes)
@@ -81,6 +84,16 @@ class ClientNamespace(socketio.AsyncNamespace):
         # username must be a string
         if not isinstance(username, str):
             return 400, "USERNAME MUST BE A STRING"
+
+        # client must exist
+        if sid not in g.usernames or sid not in g.shapes_owner:
+            return 400, "UNKNOWN CLIENT"
+
+        username = username.strip()
+        if len(username) == 0:
+            return 400, "USERNAME MUST NOT BE EMPTY"
+        if len(username) > c.MAX_USERNAME_LENGTH:
+            return 400, f"USERNAME TOO LONG (MAX {c.MAX_USERNAME_LENGTH})"
 
         # Do nothing if the username is already set
         if g.usernames[sid] == username:
@@ -117,6 +130,10 @@ class ClientNamespace(socketio.AsyncNamespace):
         # shape_uuid must be a string
         if not isinstance(shape_uuid, str):
             return 400, "SHAPE_UUID MUST BE A STRING"
+        if len(shape_uuid) == 0:
+            return 400, "SHAPE_UUID MUST NOT BE EMPTY"
+        if len(shape_uuid) > c.MAX_SHAPE_UUID_LENGTH:
+            return 400, f"SHAPE_UUID TOO LONG (MAX {c.MAX_SHAPE_UUID_LENGTH})"
 
         #shape_type must be a string
         if not isinstance(shape_type, str):
@@ -133,6 +150,12 @@ class ClientNamespace(socketio.AsyncNamespace):
         # shape musn't already exist
         if shape_uuid in g.shapes_data:
             return 400, "THIS SHAPE ALREADY EXISTS. YOU CAN'T CREATE A SHAPE THAT ALREADY EXISTS"
+
+        # client must not exceed the configured number of shapes
+        if sid not in g.shapes_owner:
+            return 400, "UNKNOWN CLIENT"
+        if len(g.shapes_owner[sid]) >= c.MAX_SHAPES_PER_CLIENT:
+            return 400, f"MAX SHAPES PER CLIENT REACHED ({c.MAX_SHAPES_PER_CLIENT})"
 
         # Add the new shape to the server's data structures
         g.shapes_data[shape_uuid] = (shape_type, shape_data)
@@ -163,6 +186,10 @@ class ClientNamespace(socketio.AsyncNamespace):
         if not isinstance(shape_uuid, str):
             return 400, "SHAPE_UUID MUST BE A STRING"
 
+        # client must exist
+        if sid not in g.shapes_owner:
+            return 400, "UNKNOWN CLIENT"
+
         #shape_type must be a string
         if not isinstance(shape_type, str):
             return 400, "SHAPE_TYPE MUST BE A STRING"
@@ -178,6 +205,10 @@ class ClientNamespace(socketio.AsyncNamespace):
         # shape must be of the same type
         if shape_type != g.shapes_data[shape_uuid][0]:
             return 400, "YOU CAN'T UPDATE A THIS SHAPE TO A DIFFERENT TYPE"
+
+        # clients can only update their own shapes
+        if shape_uuid not in g.shapes_owner[sid]:
+            return 400, "YOU CAN'T UPDATE A SHAPE YOU DON'T OWN"
 
         # we add the shapes to ours data
         g.shapes_data[shape_uuid] = (shape_type, shape_data)
@@ -203,12 +234,20 @@ class ClientNamespace(socketio.AsyncNamespace):
         if not isinstance(shape_uuid, str):
             return 400, "DATA IS NOT A STRING"
 
+        # client must exist
+        if sid not in g.shapes_owner:
+            return 400, "UNKNOWN CLIENT"
+
         # if it exists
         if shape_uuid not in g.shapes_data:
             return 400, "THIS SHAPE DOESN'T EXIST"
 
+        # clients can only delete their own shapes
+        if shape_uuid not in g.shapes_owner[sid]:
+            return 400, "YOU CAN'T DELETE A SHAPE YOU DON'T OWN"
+
         # remove the shape from the server's data structures
-        del g.shapes_data[shape_uuid]
+        g.shapes_data.pop(shape_uuid, None)
 
         # remove the shape from the client's list of shapes
         g.shapes_owner[sid].discard(shape_uuid)
@@ -217,13 +256,6 @@ class ClientNamespace(socketio.AsyncNamespace):
         await RendererNamespace.emit_shapes_update(sid, deleted_shapes=[shape_uuid])
 
         return 200, "OK"
-
-    # utils
-def kick_user(sid):
-    """
-    Kicks a user from the server.
-    """
-    asyncio.run(sio.disconnect(sid))
 
 class RendererNamespace(socketio.AsyncNamespace):
     """

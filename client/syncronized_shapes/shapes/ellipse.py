@@ -1,5 +1,7 @@
 #pylint: disable-next=relative-beyond-top-level
 from .abstract_shape import SyncronizedShape
+# pylint: disable-next=relative-beyond-top-level
+from ..validators import validate_coordinate, validate_positive_dimension
 
 class Ellipse(SyncronizedShape):
     def __init__(self, x: float | int, y: float | int, x_radius: float | int, y_radius: float | int, color: tuple[int, int, int] | list[int]) -> None:
@@ -13,24 +15,16 @@ class Ellipse(SyncronizedShape):
         :param color: The color of the ellipse as an (R, G, B) tuple
         """
         # Set the x-coordinate of the ellipse
-        if not (isinstance(x, float) or isinstance(x, int)):
-            raise TypeError("Expected float or int, got " + type(x).__name__)
-        self.__x = float(x)
+        self.__x = validate_coordinate("x", x)
 
         # Set the y-coordinate of the ellipse
-        if not (isinstance(y, float) or isinstance(y, int)):
-            raise TypeError("Expected float or int, got " + type(y).__name__)
-        self.__y = float(y)
+        self.__y = validate_coordinate("y", y)
 
         # Set the x-radius of the ellipse
-        if not (isinstance(x_radius, float) or isinstance(x_radius, int)):
-            raise TypeError("Expected float or int, got " + type(x_radius).__name__)
-        self.__x_radius = float(x_radius)
+        self.__x_radius = validate_positive_dimension("x_radius", x_radius)
 
         # Set the y-radius of the ellipse
-        if not (isinstance(y_radius, float) or isinstance(y_radius, int)):
-            raise TypeError("Expected float or int, got " + type(y_radius).__name__)
-        self.__y_radius = float(y_radius)
+        self.__y_radius = validate_positive_dimension("y_radius", y_radius)
 
         # Set the color of the ellipse
         if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
@@ -71,9 +65,7 @@ class Ellipse(SyncronizedShape):
 
     @x.setter
     def x(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__x = float(v)
+        self.__x = validate_coordinate("x", v)
         self.update_data()
 
     @property
@@ -85,9 +77,7 @@ class Ellipse(SyncronizedShape):
 
     @y.setter
     def y(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__y = float(v)
+        self.__y = validate_coordinate("y", v)
         self.update_data()
 
     @property
@@ -99,9 +89,7 @@ class Ellipse(SyncronizedShape):
 
     @x_radius.setter
     def x_radius(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__x_radius = float(v)
+        self.__x_radius = validate_positive_dimension("x_radius", v)
         self.update_data()
 
     @property
@@ -113,9 +101,7 @@ class Ellipse(SyncronizedShape):
 
     @y_radius.setter
     def y_radius(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__y_radius = float(v)
+        self.__y_radius = validate_positive_dimension("y_radius", v)
         self.update_data()
 
     @property

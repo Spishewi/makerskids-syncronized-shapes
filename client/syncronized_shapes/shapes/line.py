@@ -1,5 +1,7 @@
 #pylint: disable-next=relative-beyond-top-level
 from .abstract_shape import SyncronizedShape
+# pylint: disable-next=relative-beyond-top-level
+from ..validators import validate_coordinate
 
 class Line(SyncronizedShape):
     def __init__(self, x1: float | int, y1: float | int, x2: float | int, y2: float | int, color: tuple[int, int, int] | list[int]) -> None:
@@ -13,24 +15,16 @@ class Line(SyncronizedShape):
         :param color: The color of the line as an (R, G, B) tuple
         """
         # Set the x1-coordinate of the line
-        if not (isinstance(x1, float) or isinstance(x1, int)):
-            raise TypeError("Expected float or int, got " + type(x1).__name__)
-        self.__x1 = x1
+        self.__x1 = validate_coordinate("x1", x1)
 
         # Set the y1-coordinate of the line
-        if not (isinstance(y1, float) or isinstance(y1, int)):
-            raise TypeError("Expected float or int, got " + type(y1).__name__)
-        self.__y1 = y1
+        self.__y1 = validate_coordinate("y1", y1)
 
         # Set the x2-coordinate of the line
-        if not (isinstance(x2, float) or isinstance(x2, int)):
-            raise TypeError("Expected float or int, got " + type(x2).__name__)
-        self.__x2 = x2
+        self.__x2 = validate_coordinate("x2", x2)
 
         # Set the y2-coordinate of the line
-        if not (isinstance(y2, float) or isinstance(y2, int)):
-            raise TypeError("Expected float or int, got " + type(y2).__name__)
-        self.__y2 = y2
+        self.__y2 = validate_coordinate("y2", y2)
 
         # Set the color of the line
         if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
@@ -71,9 +65,7 @@ class Line(SyncronizedShape):
 
     @x1.setter
     def x1(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__x1 = float(v)
+        self.__x1 = validate_coordinate("x1", v)
         self.update_data()
 
     @property
@@ -85,9 +77,7 @@ class Line(SyncronizedShape):
 
     @y1.setter
     def y1(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__y1 = float(v)
+        self.__y1 = validate_coordinate("y1", v)
         self.update_data()
 
     @property
@@ -99,9 +89,7 @@ class Line(SyncronizedShape):
 
     @x2.setter
     def x2(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__x2 = float(v)
+        self.__x2 = validate_coordinate("x2", v)
         self.update_data()
 
     @property
@@ -113,9 +101,7 @@ class Line(SyncronizedShape):
 
     @y2.setter
     def y2(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__y2 = float(v)
+        self.__y2 = validate_coordinate("y2", v)
         self.update_data()
 
     @property

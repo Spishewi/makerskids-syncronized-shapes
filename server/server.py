@@ -14,6 +14,89 @@ sio = socketio.AsyncServer(
 app = web.Application()
 sio.attach(app)
 
+
+def _get_public_constants() -> dict:
+    """Return server constants that clients/renderers may consume at runtime."""
+    return {
+        "max_shapes_per_client": c.MAX_SHAPES_PER_CLIENT,
+        "max_username_length": c.MAX_USERNAME_LENGTH,
+        "max_shape_uuid_length": c.MAX_SHAPE_UUID_LENGTH,
+        "max_shape_dimension": c.MAX_SHAPE_DIMENSION,
+        "max_shape_coordinate": c.MAX_SHAPE_COORDINATE,
+        "renderer_canvas_width": c.RENDERER_CANVAS_WIDTH,
+        "renderer_canvas_height": c.RENDERER_CANVAS_HEIGHT,
+    }
+
+
+def _is_number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _is_valid_color(value) -> bool:
+    return (
+        isinstance(value, (list, tuple))
+        and len(value) == 3
+        and all(isinstance(channel, int) and 0 <= channel <= 255 for channel in value)
+    )
+
+
+def _is_valid_coordinate(value) -> bool:
+    return _is_number(value) and abs(float(value)) <= c.MAX_SHAPE_COORDINATE
+
+
+def _is_valid_dimension(value) -> bool:
+    return _is_number(value) and 0 < float(value) <= c.MAX_SHAPE_DIMENSION
+
+
+def _is_valid_shape_data(shape_type: str, shape_data: dict) -> bool:
+    if not isinstance(shape_data, dict):
+        return False
+
+    if shape_type == "Rectangle":
+        return (
+            _is_valid_coordinate(shape_data.get("__x"))
+            and _is_valid_coordinate(shape_data.get("__y"))
+            and _is_valid_dimension(shape_data.get("__width"))
+            and _is_valid_dimension(shape_data.get("__height"))
+            and _is_valid_color(shape_data.get("__color"))
+        )
+
+    if shape_type == "Ellipse":
+        return (
+            _is_valid_coordinate(shape_data.get("__x"))
+            and _is_valid_coordinate(shape_data.get("__y"))
+            and _is_valid_dimension(shape_data.get("__x_radius"))
+            and _is_valid_dimension(shape_data.get("__y_radius"))
+            and _is_valid_color(shape_data.get("__color"))
+        )
+
+    if shape_type == "Line":
+        return (
+            _is_valid_coordinate(shape_data.get("__x1"))
+            and _is_valid_coordinate(shape_data.get("__y1"))
+            and _is_valid_coordinate(shape_data.get("__x2"))
+            and _is_valid_coordinate(shape_data.get("__y2"))
+            and _is_valid_color(shape_data.get("__color"))
+        )
+
+    if shape_type == "SpaceShip":
+        return (
+            _is_valid_coordinate(shape_data.get("__x"))
+            and _is_valid_coordinate(shape_data.get("__y"))
+            and _is_number(shape_data.get("__rotation"))
+            and _is_valid_color(shape_data.get("__color"))
+        )
+
+    if shape_type == "Bullet":
+        return (
+            _is_valid_coordinate(shape_data.get("__x"))
+            and _is_valid_coordinate(shape_data.get("__y"))
+            and _is_number(shape_data.get("__angle"))
+            and _is_valid_color(shape_data.get("__color"))
+        )
+
+    return False
+
 class ClientNamespace(socketio.AsyncNamespace):
     """
     Namespace for the client.
@@ -33,6 +116,9 @@ class ClientNamespace(socketio.AsyncNamespace):
 
         # set the default client's username
         g.usernames[sid] = sid
+
+        # Send runtime constants as soon as the client connects.
+        await sio.emit("server_constants", _get_public_constants(), to=sid, namespace="/client")
 
         await RendererNamespace.emit_usernames_update(sid)
 
@@ -147,6 +233,9 @@ class ClientNamespace(socketio.AsyncNamespace):
         if not isinstance(shape_data, dict):
             return 400, "SHAPE_DATA MUST BE A DICTIONARY"
 
+        if not _is_valid_shape_data(shape_type, shape_data):
+            return 400, "INVALID SHAPE_DATA"
+
         # shape musn't already exist
         if shape_uuid in g.shapes_data:
             return 400, "THIS SHAPE ALREADY EXISTS. YOU CAN'T CREATE A SHAPE THAT ALREADY EXISTS"
@@ -197,6 +286,9 @@ class ClientNamespace(socketio.AsyncNamespace):
         # shape_data must be a dictionary
         if not isinstance(shape_data, dict):
             return 400, "SHAPE_DATA MUST BE A DICTIONARY"
+
+        if not _is_valid_shape_data(shape_type, shape_data):
+            return 400, "INVALID SHAPE_DATA"
 
         # shape musn't already exist
         if shape_uuid not in g.shapes_data:
@@ -265,6 +357,11 @@ class ClientNamespace(socketio.AsyncNamespace):
             "height": c.RENDERER_CANVAS_HEIGHT,
         }
 
+    async def on_get_server_constants(self, sid):
+        """Return public server constants for client-side validation/config."""
+        # sid is kept for API symmetry with other events.
+        return _get_public_constants()
+
 class RendererNamespace(socketio.AsyncNamespace):
     """
     Namespace for the renderer.
@@ -280,6 +377,13 @@ class RendererNamespace(socketio.AsyncNamespace):
         :param environ: Environment dictionary containing request parameters
         """
         print("connect renderer", sid)
+        sio.start_background_task(
+            sio.emit,
+            "server_constants",
+            _get_public_constants(),
+            to=sid,
+            namespace="/renderer"
+        )
 
     def on_disconnect(self, sid):
         """
@@ -315,6 +419,11 @@ class RendererNamespace(socketio.AsyncNamespace):
             "width": c.RENDERER_CANVAS_WIDTH,
             "height": c.RENDERER_CANVAS_HEIGHT,
         }
+
+    async def on_get_server_constants(self, sid):
+        """Return public server constants for renderer-side setup/debug."""
+        # sid is kept for API symmetry with other events.
+        return _get_public_constants()
 
     # emits
     @staticmethod
@@ -365,6 +474,11 @@ app.router.add_static('/static', './web/static')
 async def renderer_index(request): # pylint: disable=unused-argument
     """Serve the client-side application."""
     with open('./web/renderer/index.html', encoding='utf-8') as f:
-        return web.Response(text=f.read(), content_type='text/html')
+        html = f.read()
+
+    html = html.replace("{{CANVAS_WIDTH}}", str(c.RENDERER_CANVAS_WIDTH))
+    html = html.replace("{{CANVAS_HEIGHT}}", str(c.RENDERER_CANVAS_HEIGHT))
+
+    return web.Response(text=html, content_type='text/html')
 
 app.router.add_get('/renderer', renderer_index)

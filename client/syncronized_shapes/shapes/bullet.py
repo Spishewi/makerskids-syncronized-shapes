@@ -2,6 +2,8 @@
 from .abstract_shape import SyncronizedShape
 # pylint: disable-next=relative-beyond-top-level
 from ..network import get_canvas_size
+# pylint: disable-next=relative-beyond-top-level
+from ..validators import validate_coordinate
 import math
 
 
@@ -11,14 +13,10 @@ class Bullet(SyncronizedShape):
     def __init__(self, x: float | int, y: float | int, angle:float | int, color: tuple[int, int, int] | list[int]) -> None:
 
         # Set the x-coordinate of the bullet
-        if not (isinstance(x, float) or isinstance(x, int)):
-            raise TypeError("Expected float or int, got " + type(x).__name__)
-        self.__x = float(x)
+        self.__x = validate_coordinate("x", x)
 
         # Set the y-coordinate of the bullet
-        if not (isinstance(y, float) or isinstance(y, int)):
-            raise TypeError("Expected float or int, got " + type(y).__name__)
-        self.__y = float(y)
+        self.__y = validate_coordinate("y", y)
 
         # Set the angle of the bullet
         if not (isinstance(angle, float) or isinstance(angle, int)):
@@ -62,9 +60,7 @@ class Bullet(SyncronizedShape):
 
     @x.setter
     def x(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__x = float(v)
+        self.__x = validate_coordinate("x", v)
         self.update_data()
 
     @property
@@ -76,9 +72,7 @@ class Bullet(SyncronizedShape):
 
     @y.setter
     def y(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__y = float(v)
+        self.__y = validate_coordinate("y", v)
         self.update_data()
 
 

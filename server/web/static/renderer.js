@@ -1,8 +1,8 @@
 // Connect to the server
 const socket = io("http://127.0.0.1:8080/renderer", {
-	transports: ["websocket"],
+	reconnectionAttempts: 10,
+	timeout: 5000,
 }); // will use the /renderer namespace later
-console.log(socket);
 
 // Global variable to store the shapes
 let shapes = {};
@@ -22,38 +22,52 @@ function apply_canvas_size(data) {
 	canvas.height = data.height;
 }
 
+function apply_server_constants(data) {
+	if (!data || typeof data !== "object") {
+		return;
+	}
+
+	apply_canvas_size({
+		width: data.renderer_canvas_width,
+		height: data.renderer_canvas_height,
+	});
+}
+
 // Event handler for the "connect" event
 socket.on("connect", () => {
-	console.log("Connected to the server.");
-	socket.emit("get_canvas_size", (data) => {
-		console.log("Canvas size: ", data);
-		apply_canvas_size(data);
+	// Fetch full constants (contains canvas size too).
+	socket.emit("get_server_constants", (data) => {
+		apply_server_constants(data);
 	});
 	socket.emit("get_shapes", (data) => {
 		shapes = data;
-		console.log("Shapes: ", shapes);
 	});
 	socket.emit("get_usernames", (data) => {
-		console.log("Usernames: ", data);
 		update_usernames(data);
 	});
 });
 
 // Event handler for the "disconnect" event
-socket.on("disconnect", () => {
-	console.log("Disconnected from the server.");
+socket.on("disconnect", () => {});
+
+socket.on("connect_error", (err) => {
+	console.error("Renderer connect error:", err?.message || err);
 });
 
 socket.on("usernames_update", (data) => {
 	update_usernames(data);
 });
 
+socket.on("server_constants", (data) => {
+	apply_server_constants(data);
+});
+
 // Event handler for the "shapes_update" event
 socket.on("shapes_update", (data) => {
 	// Get the updated shapes
-	new_shapes = data.new;
-	updated_shapes = data.updated;
-	deleted_shapes = data.deleted;
+	const new_shapes = data.new;
+	const updated_shapes = data.updated;
+	const deleted_shapes = data.deleted;
 
 	// add new shapes to the shapes object
 	if (new_shapes && new_shapes.length > 0) {
@@ -81,16 +95,15 @@ socket.on("shapes_update", (data) => {
 });
 
 function update_usernames(data) {
-	console.log("update_usernames: ", data);
 	if (data === undefined) return;
 
 	usernames = data;
 
-	usernames_list = document.getElementById("usernames-list");
+	const usernames_list = document.getElementById("usernames-list");
 	usernames_list.innerHTML = "";
 
 	for (const [uuid, username] of Object.entries(usernames)) {
-		li = document.createElement("li");
+		const li = document.createElement("li");
 		li.innerText = username;
 
 		usernames_list.appendChild(li);
@@ -260,7 +273,8 @@ function draw_spaceship(ctx, data) {
 }
 
 function draw_spaceship_foot(ctx, offsetWidth, height, color) {
-	x = y = 0;
+	const x = 0;
+	const y = 0;
 	ctx.beginPath();
 	ctx.moveTo(x + offsetWidth * 0.85, y);
 	ctx.quadraticCurveTo(
@@ -330,19 +344,14 @@ function draw_line(ctx, data) {
 
 // Update the debug menu every seconds
 setInterval(() => {
-	canvas = document.getElementById("canvas-renderer");
-	debug_pre = document.getElementById("debug-pre");
+	const canvas = document.getElementById("canvas-renderer");
+	const debug_pre = document.getElementById("debug-pre");
 
 	debug_pre.innerText = `Canvas size : ${canvas.width}x${canvas.height}\n`;
-	debug_pre.innerText += `\Number of shapes : ${Object.keys(shapes).length}`;
+	debug_pre.innerText += `Number of shapes : ${Object.keys(shapes).length}`;
 }, 1000);
 
 // Draw the canvas 60 times per second
 setInterval(() => {
 	draw_canvas();
 }, 1000 / 60);
-
-// Print the shapes every 5 second
-setInterval(() => {
-	console.log("Shapes: ", shapes);
-}, 5000);

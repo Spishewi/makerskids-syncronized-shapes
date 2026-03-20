@@ -1,6 +1,8 @@
 #pylint: disable-next=relative-beyond-top-level
 from .abstract_shape import SyncronizedShape
 from .bullet import Bullet
+# pylint: disable-next=relative-beyond-top-level
+from ..validators import validate_coordinate
 import math
 
 
@@ -21,14 +23,10 @@ class SpaceShip(SyncronizedShape):
         :param color: The color of the spaceshit as an (R, G, B) tuple
         """
         # Set the x-coordinate of the spaceshit
-        if not (isinstance(x, float) or isinstance(x, int)):
-            raise TypeError("Expected float or int, got " + type(x).__name__)
-        self.__x = float(x)
+        self.__x = validate_coordinate("x", x)
 
         # Set the y-coordinate of the spaceshit
-        if not (isinstance(y, float) or isinstance(y, int)):
-            raise TypeError("Expected float or int, got " + type(y).__name__)
-        self.__y = float(y)
+        self.__y = validate_coordinate("y", y)
 
         # Set the y-coordinate of the spaceshit
         if not (isinstance(rotation, float) or isinstance(rotation, int)):
@@ -73,9 +71,7 @@ class SpaceShip(SyncronizedShape):
 
     @x.setter
     def x(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__x = float(v)
+        self.__x = validate_coordinate("x", v)
         self.update_data()
 
     @property
@@ -87,9 +83,7 @@ class SpaceShip(SyncronizedShape):
 
     @y.setter
     def y(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__y = float(v)
+        self.__y = validate_coordinate("y", v)
         self.update_data()
 
     @property

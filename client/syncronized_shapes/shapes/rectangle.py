@@ -1,5 +1,7 @@
 #pylint: disable-next=relative-beyond-top-level
 from .abstract_shape import SyncronizedShape
+# pylint: disable-next=relative-beyond-top-level
+from ..validators import validate_coordinate, validate_positive_dimension
 
 class Rectangle(SyncronizedShape):
     def __init__(self, x: float | int, y: float | int, width: float | int, height: float | int, color: tuple[int, int, int] | list[int]) -> None:
@@ -13,24 +15,16 @@ class Rectangle(SyncronizedShape):
         :param color: The color of the rectangle as an (R, G, B) tuple
         """
         # Set the x-coordinate of the rectangle
-        if not (isinstance(x, float) or isinstance(x, int)):
-            raise TypeError("Expected float or int, got " + type(x).__name__)
-        self.__x = float(x)
+        self.__x = validate_coordinate("x", x)
 
         # Set the y-coordinate of the rectangle
-        if not (isinstance(y, float) or isinstance(y, int)):
-            raise TypeError("Expected float or int, got " + type(y).__name__)
-        self.__y = float(y)
+        self.__y = validate_coordinate("y", y)
 
         # Set the width of the rectangle
-        if not (isinstance(width, float) or isinstance(width, int)):
-            raise TypeError("Expected float or int, got " + type(width).__name__)
-        self.__width = float(width)
+        self.__width = validate_positive_dimension("width", width)
 
         # Set the height of the rectangle
-        if not (isinstance(height, float) or isinstance(height, int)):
-            raise TypeError("Expected float or int, got " + type(height).__name__)
-        self.__height = float(height)
+        self.__height = validate_positive_dimension("height", height)
 
         # Set the color of the rectangle
         if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
@@ -71,9 +65,7 @@ class Rectangle(SyncronizedShape):
 
     @x.setter
     def x(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__x = float(v)
+        self.__x = validate_coordinate("x", v)
         self.update_data()
 
     @property
@@ -85,9 +77,7 @@ class Rectangle(SyncronizedShape):
 
     @y.setter
     def y(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__y = float(v)
+        self.__y = validate_coordinate("y", v)
         self.update_data()
 
     @property
@@ -99,9 +89,7 @@ class Rectangle(SyncronizedShape):
 
     @width.setter
     def width(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__width = float(v)
+        self.__width = validate_positive_dimension("width", v)
         self.update_data()
 
     @property
@@ -113,9 +101,7 @@ class Rectangle(SyncronizedShape):
 
     @height.setter
     def height(self, v: float | int):
-        if not (isinstance(v, float) or isinstance(v, int)):
-            raise TypeError("Expected float or int, got " + type(v).__name__)
-        self.__height = float(v)
+        self.__height = validate_positive_dimension("height", v)
         self.update_data()
 
     @property

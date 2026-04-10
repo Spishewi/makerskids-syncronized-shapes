@@ -21,12 +21,8 @@ offsetx = random.randint(0, 100)
 offsety = random.randint(0, 100)
 
 while True:
-    try:
-        r1.x = 150 + math.cos(time.time()) * 200 + offsetx
-        r1.y = 150 + math.sin(time.time()) * 200 + offsety
-    except ConnectionError:
-        print("ERROR: connection lost, stopping client loop")
-        break
+    r1.x = 150 + math.cos(time.time()) * 200 + offsetx
+    r1.y = 150 + math.sin(time.time()) * 200 + offsety
 
     #print(r1.x, r1.y)
     time.sleep(0.03)

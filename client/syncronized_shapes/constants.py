@@ -12,7 +12,7 @@ EVENT_UPDATE_SHAPE = "update_shape"
 EVENT_DELETE_SHAPE = "delete_shape"
 
 # Shared connection error message used by network and shape layers.
-DISCONNECTED_MESSAGE = "Please be connected to the server !"
+DISCONNECTED_MESSAGE = "Connection to server lost. Please start the server and run your script again."
 
 # Required keys for server runtime constants payload.
 # Wire contract: server values are exported on the wire in snake_case,

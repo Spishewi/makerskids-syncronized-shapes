@@ -16,19 +16,19 @@ class SpaceShip(SynchronizedShape):
     def __init__(self, x: float | int, y: float | int, rotation: float | int, color: tuple[int, int, int] | list[int]) -> None:
         self.__bullets = []
         """
-        Initializes a spaceshit with the given position, dimensions, and color.
+        Initializes a spaceship with the given position, dimensions, and color.
 
-        :param x: The x-coordinate of the spaceshit
-        :param y: The y-coordinate of the spaceshit
-        :param color: The color of the spaceshit as an (R, G, B) tuple
+        :param x: The x-coordinate of the spaceship
+        :param y: The y-coordinate of the spaceship
+        :param color: The color of the spaceship as an (R, G, B) tuple
         """
-        # Set the x-coordinate of the spaceshit
+        # Set the x-coordinate of the spaceship
         self.__x = validate_coordinate("x", x)
 
-        # Set the y-coordinate of the spaceshit
+        # Set the y-coordinate of the spaceship
         self.__y = validate_coordinate("y", y)
 
-        # Set the y-coordinate of the spaceshit
+        # Set the rotation of the spaceship
         if not (isinstance(rotation, float) or isinstance(rotation, int)):
             raise TypeError("Expected float or int, got " + type(rotation).__name__)
         self.__rotation = float(rotation)
@@ -42,27 +42,27 @@ class SpaceShip(SynchronizedShape):
 
     def to_dict(self) -> dict:
         """
-        Returns a dictionary representation of the spaceshit.
+        Returns a dictionary representation of the spaceship.
 
-        This is used to serialize the spaceshit's data when sending it to the server.
+        This is used to serialize the spaceship data when sending it to the server.
 
-        :return: A dictionary containing the spaceshit's data
+        :return: A dictionary containing the spaceship data
         """
         return {
-            # The x-coordinate of the spaceshit
+            # The x-coordinate of the spaceship
             '__x': self.__x,
-            # The y-coordinate of the spaceshit
+            # The y-coordinate of the spaceship
             '__y': self.__y,
             # The rotation of the ship
             '__rotation': self.__rotation,
-            # The color of the spaceshit as an (R, G, B) tuple
+            # The color of the spaceship as an (R, G, B) tuple
             '__color': self.__color
         }
 
     @property
     def x(self) -> float:
         """
-        The x-coordinate of the spaceshit.
+        The x-coordinate of the spaceship.
         """
         return self.__x
 
@@ -74,7 +74,7 @@ class SpaceShip(SynchronizedShape):
     @property
     def y(self) -> float:
         """
-        The y-coordinate of the spaceshit.
+        The y-coordinate of the spaceship.
         """
         return self.__y
 
@@ -86,7 +86,7 @@ class SpaceShip(SynchronizedShape):
     @property
     def rotation(self) -> float:
         """
-        The y-coordinate of the spaceshit.
+        The rotation of the spaceship.
         """
         return self.__rotation
 
@@ -100,7 +100,7 @@ class SpaceShip(SynchronizedShape):
     @property
     def color(self) -> tuple[int, int, int]:
         """
-        The color of the spaceshit as an (R, G, B) tuple.
+        The color of the spaceship as an (R, G, B) tuple.
         """
         return self.__color
 

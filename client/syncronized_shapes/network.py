@@ -49,27 +49,6 @@ def _fetch_and_cache_server_constants() -> None:
     )
     _merge_server_constants(payload)
 
-@sio.event
-def connect():
-    """
-    Handles the connection event emitted by the server after a
-    successful connection.
-
-    Prints a message to the console to indicate that the connection
-    has been established.
-    """
-    print('connection established')
-
-@sio.event
-def disconnect():
-    """
-    Handles the disconnection event emitted by the server.
-
-    Prints an error message to stderr. The caller can decide whether
-    to stop the program or keep running.
-    """
-    print('ERROR: disconnected from server', file=sys.stderr)
-
 
 @sio.on('connect', namespace=CLIENT_NAMESPACE)
 def on_client_namespace_connect():

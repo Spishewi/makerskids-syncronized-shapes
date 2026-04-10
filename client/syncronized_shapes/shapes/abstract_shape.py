@@ -111,11 +111,6 @@ class SynchronizedShape(ABC):
         # Every shape gets a stable UUID so the server can update/delete it later.
         self.__uuid = str(uuid.uuid4())
 
-        # Last successful emit time for this shape. Used to avoid sending a new
-        # update immediately after the previous one if the flush loop is still
-        # handling the previous payload.
-        self.__last_update_monotonic = 0.0
-
         # Latest payload waiting to be sent. When a user changes x and then y,
         # this stores only the newest snapshot.
         self.__pending_update_payload = None
@@ -137,14 +132,8 @@ class SynchronizedShape(ABC):
 
     def _emit_update_payload(self, payload) -> None:
         """Emit the latest shape snapshot and record the emit time."""
-        now = time.monotonic()
-
         if not _safe_emit_client(EVENT_UPDATE_SHAPE, payload):
             raise ConnectionError(DISCONNECTED_MESSAGE)
-
-        # Successful emits update the last-send timestamp so the next flush can
-        # decide whether the shape has been updated too recently.
-        self.__last_update_monotonic = now
 
     def _flush_pending_payload(self) -> None:
         """Send one queued payload if there is one."""

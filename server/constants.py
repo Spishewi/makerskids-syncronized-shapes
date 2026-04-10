@@ -2,7 +2,7 @@
 MAX_SHAPES_PER_CLIENT = 100
 
 # Renderer canvas size used by both the web renderer and client logic.
-RENDERER_CANVAS_WIDTH = 1200
+RENDERER_CANVAS_WIDTH = 2000
 RENDERER_CANVAS_HEIGHT = 1000
 
 # Server-side shape bounds.

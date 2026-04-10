@@ -1,9 +1,9 @@
 #pylint: disable-next=relative-beyond-top-level
-from .abstract_shape import SyncronizedShape
+from .abstract_shape import SynchronizedShape
 # pylint: disable-next=relative-beyond-top-level
-from ..validators import validate_coordinate, validate_positive_dimension
+from ..validators import validate_color, validate_coordinate, validate_positive_dimension
 
-class Rectangle(SyncronizedShape):
+class Rectangle(SynchronizedShape):
     def __init__(self, x: float | int, y: float | int, width: float | int, height: float | int, color: tuple[int, int, int] | list[int]) -> None:
         """
         Initializes a rectangle with the given position, dimensions, and color.
@@ -26,12 +26,9 @@ class Rectangle(SyncronizedShape):
         # Set the height of the rectangle
         self.__height = validate_positive_dimension("height", height)
 
-        # Set the color of the rectangle
-        if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
-            raise TypeError("Expected tuple or list of 3 integers between 0 and 255, got " + type(color).__name__)
-        self.__color = tuple(color)
+        self.__color = validate_color("color", color)
 
-        # Initialize the parent SyncronizedShape class
+        # Initialize the parent SynchronizedShape class
         super().__init__()
 
 
@@ -113,7 +110,5 @@ class Rectangle(SyncronizedShape):
 
     @color.setter
     def color(self, v: tuple[int, int, int] | list[int]):
-        if not (isinstance(v, tuple) or isinstance(v, list)) or len(v) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in v):
-            raise TypeError("Expected tuple or list of 3 integers between 0 and 255, got " + type(v).__name__)
-        self.__color = tuple(v)
+        self.__color = validate_color("color", v)
         self.update_data()

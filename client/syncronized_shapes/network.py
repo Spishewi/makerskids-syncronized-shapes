@@ -1,27 +1,28 @@
 import sys
 import socketio
 
-sio = socketio.Client()
+from .constants import (
+    CLIENT_NAMESPACE,
+    DISCONNECTED_MESSAGE,
+    EVENT_GET_SERVER_CONSTANTS,
+    EVENT_SERVER_CONSTANTS,
+    EVENT_SET_USERNAME,
+    SERVER_CONSTANTS_FETCH_TIMEOUT_SECONDS,
+    SERVER_CONSTANTS_REQUIRED_KEYS,
+)
+
+# Use a simple connection lifecycle like before the recent refactors:
+# no forced WebSocket transport and no automatic reconnect state juggling.
+sio = socketio.Client(reconnection=False)
 _canvas_size_cache: dict[str, int] | None = None
 _server_constants_cache: dict[str, int | float] | None = None
-_is_runtime_synced = False
 
 
 def _validate_server_constants_payload(data: dict) -> dict[str, int | float]:
-    required_keys = [
-        "max_shapes_per_client",
-        "max_username_length",
-        "max_shape_uuid_length",
-        "max_shape_dimension",
-        "max_shape_coordinate",
-        "renderer_canvas_width",
-        "renderer_canvas_height",
-    ]
-
     if not isinstance(data, dict):
         raise RuntimeError("Invalid server constants payload")
 
-    missing_keys = [key for key in required_keys if key not in data]
+    missing_keys = [key for key in SERVER_CONSTANTS_REQUIRED_KEYS if key not in data]
     if missing_keys:
         raise RuntimeError(f"Missing server constants keys: {', '.join(missing_keys)}")
 
@@ -39,16 +40,14 @@ def _merge_server_constants(data: dict) -> None:
     }
 
 
-def _sync_runtime_state() -> None:
-    global _is_runtime_synced
-
-    if not sio.connected:
-        raise ConnectionError("Please be connected to the server !")
-
-    constants_payload = sio.call("get_server_constants", namespace="/client", timeout=2)
-    _merge_server_constants(constants_payload)
-
-    _is_runtime_synced = True
+def _fetch_and_cache_server_constants() -> None:
+    """Fetch constants once from server and store them in local cache."""
+    payload = sio.call(
+        EVENT_GET_SERVER_CONSTANTS,
+        namespace=CLIENT_NAMESPACE,
+        timeout=SERVER_CONSTANTS_FETCH_TIMEOUT_SECONDS,
+    )
+    _merge_server_constants(payload)
 
 @sio.event
 def connect():
@@ -64,17 +63,15 @@ def connect():
 @sio.event
 def disconnect():
     """
-    Handles the disconnection event emitted by the server after a
-    successful disconnection.
+    Handles the disconnection event emitted by the server.
 
-    Prints a message to the console to indicate that the disconnection
-    has been sucessful and exits the program.
+    Prints an error message to stderr. The caller can decide whether
+    to stop the program or keep running.
     """
-    print('disconnected from server')
-    sys.exit() # completely exit the program
+    print('ERROR: disconnected from server', file=sys.stderr)
 
 
-@sio.on("server_constants", namespace="/client")
+@sio.on(EVENT_SERVER_CONSTANTS, namespace=CLIENT_NAMESPACE)
 def on_server_constants(data):
     """Receive pushed constants from server and refresh local runtime cache."""
     try:
@@ -89,55 +86,54 @@ def connect_client(url: str) -> None:
 
     :param url: URL of the server
     """
+    global _server_constants_cache, _canvas_size_cache
+
+    # Reset runtime cache before a new connection attempt.
+    _server_constants_cache = None
+    _canvas_size_cache = None
+
+    # Connect to the server using Socket.IO default transport negotiation.
+    sio.connect(url, namespaces=[CLIENT_NAMESPACE])
+
     try:
-        # Connect to the server.
-        sio.connect(url, namespaces=["/client"])
+        # Fetch constants once at startup and use cache afterwards.
+        _fetch_and_cache_server_constants()
+    except Exception as exc:
+        sio.disconnect()
+        raise ConnectionError("Could not fetch server constants at startup.") from exc
 
-        # Block until runtime constants and canvas size are synchronized.
-        _sync_runtime_state()
-    except Exception:
-        # Avoid leaving a half-initialized connected socket on sync failure.
-        if sio.connected:
-            sio.disconnect()
-        raise
-
-def get_canvas_size(force_refresh: bool = False) -> dict[str, int]:
+def get_canvas_size() -> dict[str, int]:
     """Return the renderer canvas size defined by the server.
 
-    :param force_refresh: If True, always request fresh data from server.
     :return: Dictionary with "width" and "height" integer keys.
     """
     global _canvas_size_cache
 
-    if not sio.connected:
-        raise ConnectionError("Please be connected to the server !")
-
-    if _canvas_size_cache is not None and not force_refresh:
+    if _canvas_size_cache is not None:
         return _canvas_size_cache
 
-    # Refresh from constants to keep one authoritative source.
-    _sync_runtime_state()
+    if not sio.connected:
+        raise ConnectionError(DISCONNECTED_MESSAGE)
 
     if _canvas_size_cache is None:
-        raise RuntimeError("Canvas size is not synchronized yet. Call connect_client first.")
+        raise RuntimeError("Canvas size is not synchronized yet. Wait for server constants.")
 
     return _canvas_size_cache
 
 
-def get_server_constants(force_refresh: bool = False) -> dict[str, int | float]:
+def get_server_constants() -> dict[str, int | float]:
     """Return runtime constants synchronized from the server.
 
-    :param force_refresh: If True, always request fresh data from server.
     :return: Dictionary containing server-side runtime constants.
     """
+    if _server_constants_cache is not None:
+        return _server_constants_cache.copy()
+
     if not sio.connected:
-        raise ConnectionError("Please be connected to the server !")
+        raise ConnectionError(DISCONNECTED_MESSAGE)
 
-    if force_refresh:
-        _sync_runtime_state()
-
-    if not _is_runtime_synced or _server_constants_cache is None:
-        raise RuntimeError("Runtime state is not synchronized yet. Call connect_client first.")
+    if _server_constants_cache is None:
+        raise RuntimeError("Server constants are not synchronized yet. Wait for server_constants event.")
 
     return _server_constants_cache.copy()
 
@@ -148,10 +144,10 @@ def set_username(username: str):
     :param username: The username to be set for the client
     """
     if not sio.connected:
-        raise ConnectionError("Please be connected to the server !")
+        raise ConnectionError(DISCONNECTED_MESSAGE)
 
     # Emit the set_username event with the provided username
-    sio.emit("set_username", username, callback=error_handler, namespace="/client")
+    sio.emit(EVENT_SET_USERNAME, username, callback=error_handler, namespace=CLIENT_NAMESPACE)
 
 def error_handler(status_code, message):
     """
@@ -164,11 +160,3 @@ def error_handler(status_code, message):
     if status_code != 200:
         # Print the error message to stderr
         print(f"ERROR: {message}", file=sys.stderr)
-
-#unused ?
-def wait():
-    try:
-        while sio.connected:
-            pass
-    except KeyboardInterrupt:
-        pass

@@ -1,9 +1,9 @@
 #pylint: disable-next=relative-beyond-top-level
-from .abstract_shape import SyncronizedShape
+from .abstract_shape import SynchronizedShape
 # pylint: disable-next=relative-beyond-top-level
-from ..validators import validate_coordinate, validate_positive_dimension
+from ..validators import validate_color, validate_coordinate, validate_positive_dimension
 
-class Ellipse(SyncronizedShape):
+class Ellipse(SynchronizedShape):
     def __init__(self, x: float | int, y: float | int, x_radius: float | int, y_radius: float | int, color: tuple[int, int, int] | list[int]) -> None:
         """
         Initializes a ellipse with the given position, radius, and color.
@@ -27,11 +27,9 @@ class Ellipse(SyncronizedShape):
         self.__y_radius = validate_positive_dimension("y_radius", y_radius)
 
         # Set the color of the ellipse
-        if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
-            raise TypeError("Expected tuple or list of length 3 containing ints between 0 and 255, got " + str(color))
-        self.__color = tuple(color)
+        self.__color = validate_color("color", color)
 
-        # Initialize the parent SyncronizedShape class
+        # Initialize the parent SynchronizedShape class
         super().__init__()
 
 
@@ -113,7 +111,5 @@ class Ellipse(SyncronizedShape):
 
     @color.setter
     def color(self, v: tuple[int, int, int] | list[int]):
-        if not (isinstance(v, tuple) or isinstance(v, list)) or len(v) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in v):
-            raise TypeError("Expected tuple or list of length 3 containing ints between 0 and 255, got " + str(v))
-        self.__color = tuple(v)
+        self.__color = validate_color("color", v)
         self.update_data()

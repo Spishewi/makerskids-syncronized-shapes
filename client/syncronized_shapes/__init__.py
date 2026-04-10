@@ -9,9 +9,6 @@ from .shapes.line import Line
 from .shapes.spaceship import SpaceShip
 from .shapes.bullet import Bullet
 
-# utility functions
-from .utils import map_value
-
 
 __all__ = [
     "connect_client",
@@ -24,6 +21,5 @@ __all__ = [
     "Ellipse",
     "Line",
     "SpaceShip",
-
-    "map_value"
+    "Bullet",
 ]

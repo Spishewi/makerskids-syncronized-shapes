@@ -1,15 +1,15 @@
 #pylint: disable-next=relative-beyond-top-level
-from .abstract_shape import SyncronizedShape
+from .abstract_shape import SynchronizedShape
 # pylint: disable-next=relative-beyond-top-level
 from ..network import get_canvas_size
 # pylint: disable-next=relative-beyond-top-level
-from ..validators import validate_coordinate
+from ..validators import validate_color, validate_coordinate
 import math
 
 
 SPEED = 10
 
-class Bullet(SyncronizedShape):
+class Bullet(SynchronizedShape):
     def __init__(self, x: float | int, y: float | int, angle:float | int, color: tuple[int, int, int] | list[int]) -> None:
 
         # Set the x-coordinate of the bullet
@@ -23,12 +23,9 @@ class Bullet(SyncronizedShape):
             raise TypeError("Expected float or int, got " + type(angle).__name__)
         self.__angle = float(angle)
 
-        # Set the color of the bullet
-        if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
-            raise TypeError("Expected tuple or list of length 3 containing ints between 0 and 255, got " + str(color))
-        self.__color = tuple(color)
+        self.__color = validate_color("color", color)
 
-        # Initialize the parent SyncronizedShape class
+        # Initialize the parent SynchronizedShape class
         super().__init__()
 
 
@@ -99,9 +96,7 @@ class Bullet(SyncronizedShape):
 
     @color.setter
     def color(self, v: tuple[int, int, int] | list[int]):
-        if not (isinstance(v, tuple) or isinstance(v, list)) or len(v) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in v):
-            raise TypeError("Expected tuple or list of length 3 containing ints between 0 and 255, got " + str(v))
-        self.__color = tuple(v)
+        self.__color = validate_color("color", v)
         self.update_data()
 
     def update(self):

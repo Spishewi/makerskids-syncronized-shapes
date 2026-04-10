@@ -1,9 +1,9 @@
 #pylint: disable-next=relative-beyond-top-level
-from .abstract_shape import SyncronizedShape
+from .abstract_shape import SynchronizedShape
 # pylint: disable-next=relative-beyond-top-level
-from ..validators import validate_coordinate
+from ..validators import validate_color, validate_coordinate
 
-class Line(SyncronizedShape):
+class Line(SynchronizedShape):
     def __init__(self, x1: float | int, y1: float | int, x2: float | int, y2: float | int, color: tuple[int, int, int] | list[int]) -> None:
         """
         Initializes a line with the given position, dimensions, and color.
@@ -26,12 +26,9 @@ class Line(SyncronizedShape):
         # Set the y2-coordinate of the line
         self.__y2 = validate_coordinate("y2", y2)
 
-        # Set the color of the line
-        if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
-            raise TypeError("Expected tuple or list of length 3 containing ints between 0 and 255, got " + str(color))
-        self.__color = color
+        self.__color = validate_color("color", color)
 
-        # Initialize the parent SyncronizedShape class
+        # Initialize the parent SynchronizedShape class
         super().__init__()
 
 
@@ -113,7 +110,5 @@ class Line(SyncronizedShape):
 
     @color.setter
     def color(self, v: tuple[int, int, int] | list[int]):
-        if not (isinstance(v, tuple) or isinstance(v, list)) or len(v) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in v):
-            raise TypeError("Expected tuple or list of length 3 containing ints between 0 and 255, got " + str(v))
-        self.__color = tuple(v)
+        self.__color = validate_color("color", v)
         self.update_data()

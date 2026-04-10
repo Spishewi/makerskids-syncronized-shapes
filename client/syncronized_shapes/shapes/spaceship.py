@@ -1,14 +1,14 @@
 #pylint: disable-next=relative-beyond-top-level
-from .abstract_shape import SyncronizedShape
+from .abstract_shape import SynchronizedShape
 from .bullet import Bullet
 # pylint: disable-next=relative-beyond-top-level
-from ..validators import validate_coordinate
+from ..validators import validate_color, validate_coordinate
 import math
 
 
 HEIGHT = 40
 MAX_BULLETS = 5
-class SpaceShip(SyncronizedShape):
+class SpaceShip(SynchronizedShape):
 
 
 
@@ -34,12 +34,9 @@ class SpaceShip(SyncronizedShape):
         self.__rotation = float(rotation)
        
 
-        # Set the color of the spaceshit
-        if not (isinstance(color, tuple) or isinstance(color, list)) or len(color) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
-            raise TypeError("Expected tuple or list of 3 integers between 0 and 255, got " + type(color).__name__)
-        self.__color = tuple(color)
+        self.__color = validate_color("color", color)
 
-        # Initialize the parent SyncronizedShape class
+        # Initialize the parent SynchronizedShape class
         super().__init__()
 
 
@@ -109,9 +106,7 @@ class SpaceShip(SyncronizedShape):
 
     @color.setter
     def color(self, v: tuple[int, int, int] | list[int]):
-        if not (isinstance(v, tuple) or isinstance(v, list)) or len(v) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in v):
-            raise TypeError("Expected tuple or list of 3 integers between 0 and 255, got " + type(v).__name__)
-        self.__color = tuple(v)
+        self.__color = validate_color("color", v)
         self.update_data()
 
     def shoot(self):

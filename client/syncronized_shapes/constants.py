@@ -1,5 +1,34 @@
 """Runtime configuration for synchronized shapes network behavior."""
 
+# Socket.IO namespaces.
+CLIENT_NAMESPACE = "/client"
+RENDERER_NAMESPACE = "/renderer"
+
+# Client event names.
+EVENT_SERVER_CONSTANTS = "server_constants"
+EVENT_GET_SERVER_CONSTANTS = "get_server_constants"
+EVENT_SET_USERNAME = "set_username"
+EVENT_CREATE_SHAPE = "create_shape"
+EVENT_UPDATE_SHAPE = "update_shape"
+EVENT_DELETE_SHAPE = "delete_shape"
+
+# Shared connection error message used by network and shape layers.
+DISCONNECTED_MESSAGE = "Please be connected to the server !"
+
+# Required keys for server runtime constants payload.
+SERVER_CONSTANTS_REQUIRED_KEYS = (
+    "max_shapes_per_client",
+    "max_username_length",
+    "max_shape_uuid_length",
+    "max_shape_dimension",
+    "max_shape_coordinate",
+    "renderer_canvas_width",
+    "renderer_canvas_height",
+)
+
+# Timeout used when fetching runtime constants once at startup.
+SERVER_CONSTANTS_FETCH_TIMEOUT_SECONDS = 5
+
 # Maximum number of update messages sent per shape per second.
 # This is a client-side throttle, not a guaranteed delivery rate.
 # Default is tuned for smooth animations.

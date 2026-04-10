@@ -13,7 +13,7 @@ from .constants import (
 
 # Use a simple connection lifecycle like before the recent refactors:
 # no forced WebSocket transport and no automatic reconnect state juggling.
-sio = socketio.Client(reconnection=False)
+sio = socketio.Client(reconnection=False, request_timeout=30)
 _canvas_size_cache: dict[str, int] | None = None
 _server_constants_cache: dict[str, int | float] | None = None
 
@@ -71,6 +71,24 @@ def disconnect():
     print('ERROR: disconnected from server', file=sys.stderr)
 
 
+@sio.on('connect', namespace=CLIENT_NAMESPACE)
+def on_client_namespace_connect():
+    """Handle successful connection of the /client namespace."""
+    print('connection established on /client namespace')
+
+
+@sio.on('disconnect', namespace=CLIENT_NAMESPACE)
+def on_client_namespace_disconnect():
+    """Handle disconnection of the /client namespace."""
+    print('ERROR: disconnected from /client namespace', file=sys.stderr)
+
+
+@sio.on('connect_error', namespace=CLIENT_NAMESPACE)
+def on_client_namespace_connect_error(data):
+    """Handle connection error for the /client namespace."""
+    print(f'ERROR: /client namespace connection failed: {data}', file=sys.stderr)
+
+
 @sio.on(EVENT_SERVER_CONSTANTS, namespace=CLIENT_NAMESPACE)
 def on_server_constants(data):
     """Receive pushed constants from server and refresh local runtime cache."""
@@ -92,8 +110,12 @@ def connect_client(url: str) -> None:
     _server_constants_cache = None
     _canvas_size_cache = None
 
-    # Connect to the server using Socket.IO default transport negotiation.
-    sio.connect(url, namespaces=[CLIENT_NAMESPACE])
+    # Prefer WebSocket to avoid polling request timeout churn under heavy update traffic.
+    try:
+        sio.connect(url, namespaces=[CLIENT_NAMESPACE], transports=["websocket"], wait_timeout=20)
+    except socketio.exceptions.ConnectionError:
+        # Fallback keeps compatibility when WebSocket upgrade is temporarily unavailable.
+        sio.connect(url, namespaces=[CLIENT_NAMESPACE], wait_timeout=20)
 
     try:
         # Fetch constants once at startup and use cache afterwards.

@@ -33,7 +33,7 @@ def _safe_emit_client(event: str, data, callback=None) -> bool:
         return False
 
     try:
-        sio.emit(event, data, callback=callback if callback is not None else error_handler, namespace=CLIENT_NAMESPACE)
+        sio.emit(event, data, callback=callback, namespace=CLIENT_NAMESPACE)
         return True
     except (socketio.exceptions.BadNamespaceError, ConnectionError, RuntimeError, OSError):
         return False
@@ -57,6 +57,12 @@ class SynchronizedShape(ABC):
         if not _safe_emit_client(EVENT_CREATE_SHAPE, (self.__uuid, self.__class__.__name__, self.to_dict())):
             raise ConnectionError(DISCONNECTED_MESSAGE)
 
+    def _emit_update_payload(self, payload) -> None:
+        """Emit one shape snapshot update to the server."""
+
+        if not _safe_emit_client(EVENT_UPDATE_SHAPE, payload):
+            raise ConnectionError(DISCONNECTED_MESSAGE)
+
     def __del__(self) -> None:
         """
         Called when the shape is garbage collected. Emits a delete_shape event
@@ -73,8 +79,8 @@ class SynchronizedShape(ABC):
         """
         Updates the shape's data on the server.
         """
-        if not _safe_emit_client(EVENT_UPDATE_SHAPE, (self.__uuid, self.__class__.__name__, self.to_dict())):
-            return
+        payload = (self.__uuid, self.__class__.__name__, self.to_dict())
+        self._emit_update_payload(payload)
 
     @abstractmethod
     def to_dict(self) -> dict:

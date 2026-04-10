@@ -1,4 +1,5 @@
 from aiohttp import web
+import sys
 import socketio
 
 import constants as c
@@ -9,14 +10,36 @@ import variables as g
 sio = socketio.AsyncServer(
     async_mode="aiohttp",
     cors_allowed_origins="*",
-    debug=True
+    debug=False,
+    logger=False,
+    engineio_logger=False,
+    ping_interval=25,
+    ping_timeout=600,
 )
 app = web.Application()
 sio.attach(app)
 
 
+async def _safe_emit(event: str, data, **kwargs) -> None:
+    """Emit Socket.IO event and contain transient transport/namespace failures."""
+    try:
+        await sio.emit(event, data, **kwargs)
+    except (socketio.exceptions.BadNamespaceError, ConnectionError, RuntimeError, OSError) as exc:
+        print(f"WARN: emit failed for {event}: {exc}", file=sys.stderr)
+
+
+def _has_renderer_clients() -> bool:
+    """Return True when at least one renderer socket is currently connected."""
+    participants = sio.manager.get_participants(c.RENDERER_NAMESPACE, None)
+    return any(True for _ in participants)
+
+
 def _get_public_constants() -> dict:
-    """Return server constants that clients/renderers may consume at runtime."""
+    """Return server constants that clients/renderers may consume at runtime.
+
+    Mapping rule: internal SCREAMING_CASE constants are exposed to clients
+    as snake_case wire keys.
+    """
     return {
         "max_shapes_per_client": c.MAX_SHAPES_PER_CLIENT,
         "max_username_length": c.MAX_USERNAME_LENGTH,
@@ -28,11 +51,11 @@ def _get_public_constants() -> dict:
     }
 
 
-def _is_number(value) -> bool:
+def _validate_number(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def _is_valid_color(value) -> bool:
+def _validate_color(value) -> bool:
     return (
         isinstance(value, (list, tuple))
         and len(value) == 3
@@ -40,59 +63,59 @@ def _is_valid_color(value) -> bool:
     )
 
 
-def _is_valid_coordinate(value) -> bool:
-    return _is_number(value) and abs(float(value)) <= c.MAX_SHAPE_COORDINATE
+def _validate_coordinate(value) -> bool:
+    return _validate_number(value) and abs(float(value)) <= c.MAX_SHAPE_COORDINATE
 
 
-def _is_valid_dimension(value) -> bool:
-    return _is_number(value) and 0 < float(value) <= c.MAX_SHAPE_DIMENSION
+def _validate_dimension(value) -> bool:
+    return _validate_number(value) and 0 < float(value) <= c.MAX_SHAPE_DIMENSION
 
 
-def _is_valid_shape_data(shape_type: str, shape_data: dict) -> bool:
+def _validate_shape_data(shape_type: str, shape_data: dict) -> bool:
     if not isinstance(shape_data, dict):
         return False
 
     if shape_type == "Rectangle":
         return (
-            _is_valid_coordinate(shape_data.get("__x"))
-            and _is_valid_coordinate(shape_data.get("__y"))
-            and _is_valid_dimension(shape_data.get("__width"))
-            and _is_valid_dimension(shape_data.get("__height"))
-            and _is_valid_color(shape_data.get("__color"))
+            _validate_coordinate(shape_data.get("__x"))
+            and _validate_coordinate(shape_data.get("__y"))
+            and _validate_dimension(shape_data.get("__width"))
+            and _validate_dimension(shape_data.get("__height"))
+            and _validate_color(shape_data.get("__color"))
         )
 
     if shape_type == "Ellipse":
         return (
-            _is_valid_coordinate(shape_data.get("__x"))
-            and _is_valid_coordinate(shape_data.get("__y"))
-            and _is_valid_dimension(shape_data.get("__x_radius"))
-            and _is_valid_dimension(shape_data.get("__y_radius"))
-            and _is_valid_color(shape_data.get("__color"))
+            _validate_coordinate(shape_data.get("__x"))
+            and _validate_coordinate(shape_data.get("__y"))
+            and _validate_dimension(shape_data.get("__x_radius"))
+            and _validate_dimension(shape_data.get("__y_radius"))
+            and _validate_color(shape_data.get("__color"))
         )
 
     if shape_type == "Line":
         return (
-            _is_valid_coordinate(shape_data.get("__x1"))
-            and _is_valid_coordinate(shape_data.get("__y1"))
-            and _is_valid_coordinate(shape_data.get("__x2"))
-            and _is_valid_coordinate(shape_data.get("__y2"))
-            and _is_valid_color(shape_data.get("__color"))
+            _validate_coordinate(shape_data.get("__x1"))
+            and _validate_coordinate(shape_data.get("__y1"))
+            and _validate_coordinate(shape_data.get("__x2"))
+            and _validate_coordinate(shape_data.get("__y2"))
+            and _validate_color(shape_data.get("__color"))
         )
 
     if shape_type == "SpaceShip":
         return (
-            _is_valid_coordinate(shape_data.get("__x"))
-            and _is_valid_coordinate(shape_data.get("__y"))
-            and _is_number(shape_data.get("__rotation"))
-            and _is_valid_color(shape_data.get("__color"))
+            _validate_coordinate(shape_data.get("__x"))
+            and _validate_coordinate(shape_data.get("__y"))
+            and _validate_number(shape_data.get("__rotation"))
+            and _validate_color(shape_data.get("__color"))
         )
 
     if shape_type == "Bullet":
         return (
-            _is_valid_coordinate(shape_data.get("__x"))
-            and _is_valid_coordinate(shape_data.get("__y"))
-            and _is_number(shape_data.get("__angle"))
-            and _is_valid_color(shape_data.get("__color"))
+            _validate_coordinate(shape_data.get("__x"))
+            and _validate_coordinate(shape_data.get("__y"))
+            and _validate_number(shape_data.get("__angle"))
+            and _validate_color(shape_data.get("__color"))
         )
 
     return False
@@ -118,7 +141,7 @@ class ClientNamespace(socketio.AsyncNamespace):
         g.usernames[sid] = sid
 
         # Send runtime constants as soon as the client connects.
-        await sio.emit("server_constants", _get_public_constants(), to=sid, namespace="/client")
+        await sio.emit(c.EVENT_SERVER_CONSTANTS, _get_public_constants(), to=sid, namespace=c.CLIENT_NAMESPACE)
 
         await RendererNamespace.emit_usernames_update(sid)
 
@@ -233,7 +256,7 @@ class ClientNamespace(socketio.AsyncNamespace):
         if not isinstance(shape_data, dict):
             return 400, "SHAPE_DATA MUST BE A DICTIONARY"
 
-        if not _is_valid_shape_data(shape_type, shape_data):
+        if not _validate_shape_data(shape_type, shape_data):
             return 400, "INVALID SHAPE_DATA"
 
         # shape musn't already exist
@@ -287,7 +310,7 @@ class ClientNamespace(socketio.AsyncNamespace):
         if not isinstance(shape_data, dict):
             return 400, "SHAPE_DATA MUST BE A DICTIONARY"
 
-        if not _is_valid_shape_data(shape_type, shape_data):
+        if not _validate_shape_data(shape_type, shape_data):
             return 400, "INVALID SHAPE_DATA"
 
         # shape musn't already exist
@@ -368,7 +391,7 @@ class RendererNamespace(socketio.AsyncNamespace):
     """
 
     # events
-    def on_connect(self, sid, environ):
+    async def on_connect(self, sid, environ):
         """
         Triggered when the renderer connects to the server.
         Prints a message to the console.
@@ -377,12 +400,11 @@ class RendererNamespace(socketio.AsyncNamespace):
         :param environ: Environment dictionary containing request parameters
         """
         print("connect renderer", sid)
-        sio.start_background_task(
-            sio.emit,
-            "server_constants",
+        await _safe_emit(
+            c.EVENT_SERVER_CONSTANTS,
             _get_public_constants(),
             to=sid,
-            namespace="/renderer"
+            namespace=c.RENDERER_NAMESPACE
         )
 
     def on_disconnect(self, sid):
@@ -442,13 +464,19 @@ class RendererNamespace(socketio.AsyncNamespace):
         updated_shapes = [] if updated_shapes is None else updated_shapes
         new_shapes = [] if new_shapes is None else new_shapes
 
+        # Avoid expensive renderer payload work when no renderer is connected.
+        if not _has_renderer_clients():
+            return
+
         # emit the event to the renderer
-        await sio.emit("shapes_update", {
-            "deleted": deleted_shapes,
-            "updated": updated_shapes,
-            "new": new_shapes
+        await _safe_emit(
+            c.EVENT_SHAPES_UPDATE,
+            {
+                "deleted": deleted_shapes,
+                "updated": updated_shapes,
+                "new": new_shapes,
             },
-            namespace="/renderer"
+            namespace=c.RENDERER_NAMESPACE,
         )
 
     @staticmethod
@@ -460,12 +488,16 @@ class RendererNamespace(socketio.AsyncNamespace):
         :param sid: Session ID for the client
         :param usernames: List of usernames
         """
+        # Avoid unnecessary emits when renderer is not connected.
+        if not _has_renderer_clients():
+            return
+
         # emit the event to the renderer
-        await sio.emit("usernames_update", g.usernames, namespace="/renderer")
+        await _safe_emit(c.EVENT_USERNAMES_UPDATE, g.usernames, namespace=c.RENDERER_NAMESPACE)
 
 # register the namespaces
-sio.register_namespace(ClientNamespace("/client"))
-sio.register_namespace(RendererNamespace("/renderer"))
+sio.register_namespace(ClientNamespace(c.CLIENT_NAMESPACE))
+sio.register_namespace(RendererNamespace(c.RENDERER_NAMESPACE))
 
 # add the static files
 app.router.add_static('/static', './web/static')

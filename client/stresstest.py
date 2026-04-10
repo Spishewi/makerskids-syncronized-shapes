@@ -7,16 +7,16 @@ from syncronized_shapes import (
     connect_client,
     Rectangle)
 
-connect_client('http://localhost:8080')
+connect_client('https://dbd2-193-52-208-97.ngrok-free.app')
 
 def get_random_color() -> tuple[int, int, int]:
     """
     Returns a random color as a tuple of 3 integers between 85 and 170.
     """
     return (
-        random.randint(85, 170),
-        random.randint(85, 170),
-        random.randint(85, 170)
+        random.randint(85, 200),
+        random.randint(85, 200),
+        random.randint(85, 200)
     )
 
 

@@ -2,7 +2,6 @@
 
 # Socket.IO namespaces.
 CLIENT_NAMESPACE = "/client"
-RENDERER_NAMESPACE = "/renderer"
 
 # Client event names.
 EVENT_SERVER_CONSTANTS = "server_constants"
@@ -16,6 +15,8 @@ EVENT_DELETE_SHAPE = "delete_shape"
 DISCONNECTED_MESSAGE = "Please be connected to the server !"
 
 # Required keys for server runtime constants payload.
+# Wire contract: server values are exported on the wire in snake_case,
+# while server source constants remain SCREAMING_CASE.
 SERVER_CONSTANTS_REQUIRED_KEYS = (
     "max_shapes_per_client",
     "max_username_length",

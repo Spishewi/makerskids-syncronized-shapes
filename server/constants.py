@@ -1,6 +1,15 @@
 # Maximum number of shapes a single client can own at the same time.
 MAX_SHAPES_PER_CLIENT = 100
 
+# Socket.IO namespaces.
+CLIENT_NAMESPACE = "/client"
+RENDERER_NAMESPACE = "/renderer"
+
+# Event names.
+EVENT_SERVER_CONSTANTS = "server_constants"
+EVENT_SHAPES_UPDATE = "shapes_update"
+EVENT_USERNAMES_UPDATE = "usernames_update"
+
 # Renderer canvas size used by both the web renderer and client logic.
 RENDERER_CANVAS_WIDTH = 2000
 RENDERER_CANVAS_HEIGHT = 1000

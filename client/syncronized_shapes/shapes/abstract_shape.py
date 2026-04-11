@@ -28,12 +28,15 @@ def _is_client_namespace_connected() -> bool:
     if not sio.connected:
         return False
 
-    namespaces = getattr(sio, "namespaces", {})
+    namespaces = getattr(sio, "namespaces", None)
     if isinstance(namespaces, dict):
         return CLIENT_NAMESPACE in namespaces
 
     # Defensive fallback for potential future API shape changes.
-    return CLIENT_NAMESPACE in namespaces
+    try:
+        return CLIENT_NAMESPACE in namespaces
+    except TypeError:
+        return False
 
 
 def _safe_emit_client(event: str, data, callback=None) -> bool:
@@ -115,6 +118,9 @@ class SynchronizedShape(ABC):
         # this stores only the newest snapshot.
         self.__pending_update_payload = None
 
+        # Last payload that was actually sent successfully.
+        self.__last_sent_payload = None
+
         # If a flush fails because the connection dropped, we store the error so
         # the next user-visible property change can raise a clear message.
         self.__pending_update_error: Exception | None = None
@@ -124,16 +130,24 @@ class SynchronizedShape(ABC):
         self.__pending_lock = threading.Lock()
 
         # Creation is sent immediately so the server knows this shape exists.
-        if not _safe_emit_client(EVENT_CREATE_SHAPE, (self.__uuid, self.__class__.__name__, self.to_dict())):
+        create_payload = (self.__uuid, self.__class__.__name__, self.to_dict())
+        if not _safe_emit_client(EVENT_CREATE_SHAPE, create_payload):
             raise ConnectionError(DISCONNECTED_MESSAGE)
+
+        # Treat the initial create payload as already synchronized state so
+        # immediate no-op property writes do not generate redundant updates.
+        self.__last_sent_payload = create_payload
 
         # Register the flush thread after the object is fully initialized.
         self.__class__._ensure_flush_thread_started()
 
     def _emit_update_payload(self, payload) -> None:
-        """Emit the latest shape snapshot and record the emit time."""
+        """Emit the latest shape snapshot and remember it as the last sent state."""
         if not _safe_emit_client(EVENT_UPDATE_SHAPE, payload):
             raise ConnectionError(DISCONNECTED_MESSAGE)
+
+        with self.__pending_lock:
+            self.__last_sent_payload = payload
 
     def _flush_pending_payload(self) -> None:
         """Send one queued payload if there is one."""
@@ -191,6 +205,14 @@ class SynchronizedShape(ABC):
         # call will overwrite this pending payload.
         payload = (self.__uuid, self.__class__.__name__, self.to_dict())
         with self.__pending_lock:
+            if payload == self.__pending_update_payload:
+                return
+
+            # If nothing is currently queued, skip a redundant emit when the
+            # shape already has the same last successfully sent snapshot.
+            if self.__pending_update_payload is None and payload == self.__last_sent_payload:
+                return
+
             self.__pending_update_payload = payload
 
         # Mark the shape dirty so the flusher thread will pick it up.
